@@ -48,6 +48,7 @@
 		3886D4B514790FE700970CAE /* DuxCSSBaseElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 3886D4B414790FE700970CAE /* DuxCSSBaseElement.m */; };
 		3886D4B81479100000970CAE /* DuxCSSCommentElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 3886D4B71479100000970CAE /* DuxCSSCommentElement.m */; };
 		3886D4C3147912BC00970CAE /* DuxCSSClassSelectorElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 3886D4C2147912BC00970CAE /* DuxCSSClassSelectorElement.m */; };
+		38979ADE1729C8E100DA01EE /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 38979ADD1729C8E100DA01EE /* QuartzCore.framework */; };
 		38983C731474FEC8004DD914 /* JumpToLinePanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 38983C721474FEC8004DD914 /* JumpToLinePanel.xib */; };
 		38983C7614751B66004DD914 /* DuxLanguageMenuItem.m in Sources */ = {isa = PBXBuildFile; fileRef = 38983C7514751B65004DD914 /* DuxLanguageMenuItem.m */; };
 		389ACC4D172265A100E01DB3 /* DuxNavigatorFilesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 389ACC4C172265A100E01DB3 /* DuxNavigatorFilesViewController.m */; };
@@ -206,6 +207,7 @@
 		3886D4B71479100000970CAE /* DuxCSSCommentElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxCSSCommentElement.m; sourceTree = "<group>"; };
 		3886D4C1147912BC00970CAE /* DuxCSSClassSelectorElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxCSSClassSelectorElement.h; sourceTree = "<group>"; };
 		3886D4C2147912BC00970CAE /* DuxCSSClassSelectorElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxCSSClassSelectorElement.m; sourceTree = "<group>"; };
+		38979ADD1729C8E100DA01EE /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		38983C721474FEC8004DD914 /* JumpToLinePanel.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = JumpToLinePanel.xib; sourceTree = "<group>"; };
 		38983C7414751B65004DD914 /* DuxLanguageMenuItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxLanguageMenuItem.h; sourceTree = "<group>"; };
 		38983C7514751B65004DD914 /* DuxLanguageMenuItem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxLanguageMenuItem.m; sourceTree = "<group>"; };
@@ -296,7 +298,7 @@
 		38D4B48F17209FA300B2EDEC /* DuxAcknowledgementsController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxAcknowledgementsController.h; sourceTree = "<group>"; };
 		38D4B49017209FA300B2EDEC /* DuxAcknowledgementsController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxAcknowledgementsController.m; sourceTree = "<group>"; };
 		38D4B4921720A28D00B2EDEC /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fonts; sourceTree = SOURCE_ROOT; };
-		38D605831403859600D70F81 /* Dux.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dux.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		38D605831403859600D70F81 /* Dux.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Dux.app; path = "Dux - text view rewrite.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		38D605871403859600D70F81 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		38D6058A1403859600D70F81 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		38D6058B1403859600D70F81 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
@@ -354,6 +356,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				38979ADE1729C8E100DA01EE /* QuartzCore.framework in Frameworks */,
 				38D605D714039A0600D70F81 /* CoreFoundation.framework in Frameworks */,
 				38D605881403859600D70F81 /* Cocoa.framework in Frameworks */,
 			);
@@ -617,6 +620,7 @@
 		38D605781403859600D70F81 = {
 			isa = PBXGroup;
 			children = (
+				38979ADD1729C8E100DA01EE /* QuartzCore.framework */,
 				38D6058D1403859600D70F81 /* Dux */,
 				38D605861403859600D70F81 /* Frameworks */,
 				38D605841403859600D70F81 /* Products */,

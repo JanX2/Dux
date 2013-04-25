@@ -49,8 +49,26 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   return lineSize.height;
 }
 
+- (void)drawInContext:(CGContextRef)context
+{
+  NSMutableParagraphStyle *paragraphStyle = [NSParagraphStyle defaultParagraphStyle].mutableCopy;
+  paragraphStyle.tabStops = @[];
+  paragraphStyle.alignment = NSLeftTextAlignment;
+  paragraphStyle.baseWritingDirection = NSWritingDirectionLeftToRight;
+  paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
+  paragraphStyle.defaultTabInterval = 14;
+  paragraphStyle.headIndent = 28;
+  NSDictionary *textAttributes = @{NSFontAttributeName: [NSFont fontWithName:@"Source Code Pro" size:12], NSParagraphStyleAttributeName:paragraphStyle.copy};
+  
+  [self drawInContext:context atYOffset:0 width:self.frame.size.width attributes:textAttributes.mutableCopy];
+}
+
 - (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth attributes:(NSMutableDictionary *)attributes
 {
+  CGColorRef bgColor = [NSColor whiteColor].CGColor;
+  CGContextSetFillColorWithColor(context, bgColor);
+  CGContextFillRect(context, self.bounds);
+  
   // calculate head indent
   NSUInteger whitespaceEnd = [self.storage.string rangeOfCharacterFromSet:nonWhitespaceCharacterSet options:NSLiteralSearch range:self.range].location;
   CGFloat headIndent = 28; // default
@@ -80,7 +98,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
   CGFloat lineHeight = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(lineWidth, CGFLOAT_MAX), NULL).height;
   CGRect lineRect = (CGRect){{0, 0}, {lineWidth, lineHeight}};
-  lineRect.origin.y = yOffset - lineRect.size.height;
+  lineRect.origin.y = self.frame.size.height - lineRect.size.height;
   
   //Draw Frame
   CGPathRef path = CGPathCreateWithRect(lineRect, NULL);

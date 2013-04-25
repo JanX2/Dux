@@ -6,11 +6,11 @@
 //  Copyright (c) 2013 Abhi Beckert. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+#import <QuartzCore/QuartzCore.h>
 
 @class DuxTextStorage;
 
-@interface DuxLine : NSObject
+@interface DuxLine : CALayer
 
 - (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range;
 

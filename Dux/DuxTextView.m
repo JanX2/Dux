@@ -81,8 +81,9 @@ static NSCharacterSet *newlineCharacterSet;
   self.verticalScroller.action = @selector(scrollAction:);
   [self addSubview:self.verticalScroller];
 
-  
-  
+  self.wantsLayer = YES;
+  self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
+  [self updateLayers];
   
   
   
@@ -996,103 +997,147 @@ if ([DuxPreferences editorDarkMode]) {
 //  [super setNeedsDisplayInRect:rect avoidAdditionalLayout:flag];
 }
 
-- (void)drawRect:(NSRect)dirtyRect
+- (void)setFrame:(NSRect)frameRect
 {
-  [[NSColor whiteColor] set];
-  NSRectFill(dirtyRect);
+  [super setFrame:frameRect];
   
-  CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
-  CGContextSetTextMatrix(context, CGAffineTransformIdentity);
+  [self updateLayers];
+}
+
+//- (void)drawLayer:(CALayer *)layer inContext:(CGContextRef)context
+//{
+//  CGColorRef bgColor = [NSColor blueColor].CGColor;
+//  CGContextSetFillColorWithColor(context, bgColor);
+//  CGContextFillRect(context, layer.bounds);
+//}
+
+- (void)updateLayers
+{
+  // kill all existing layers
+  for (CALayer *layer in self.layer.sublayers.copy) {
+    [layer removeFromSuperlayer];
+  }
   
-  
-  //  NSUInteger lineIndex = [self.layoutManager lineIndexForCharacterPosition:self.scrollPosition];
   NSUInteger characterPosition = self.scrollPosition;
   NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
   CGFloat lineWidth = self.frame.size.width;
-  CGFloat yOffset = self.frame.size.height - self.scrollDelta;
+  CGFloat yOffset = 0 - self.scrollDelta;
   CGFloat minYOffset = 0 - [@" " sizeWithAttributes:workingAttributes].height;
-  
+
   while (yOffset > minYOffset) {
     DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
     if (!line)
       break;
     
-    yOffset = [line drawInContext:context atYOffset:yOffset width:lineWidth attributes:workingAttributes];
+    CGFloat lineHeight = [line heightWithWidth:lineWidth attributes:workingAttributes];
     
     characterPosition += line.range.length + 1;
+    
+    line.frame = CGRectMake(0, yOffset, lineWidth, lineHeight);
+    [self.layer addSublayer:line];
+    [line setOpaque:YES];
+    [line setNeedsDisplay];
+    yOffset += lineHeight;
   }
+}
 
-  
-  NSLog(@"not yet implemented");
-  
-  
-//	NSRect documentVisibleRect = self.enclosingScrollView.documentVisibleRect;
-//	NSLayoutManager *layoutManager = self.layoutManager;
-//	NSTextContainer *textContainer = self.textContainer;
-//  
-//  // background
-//  [self.backgroundColor set];
+//- (void)drawRect:(NSRect)dirtyRect
+//{
+//  [[NSColor whiteColor] set];
 //  NSRectFill(dirtyRect);
 //  
-//  // page guide
-//  if (self.showPageGuide) {
-//if ([DuxPreferences editorDarkMode]) {
-//    [[NSColor colorWithDeviceWhite:1 alpha:0.1] set];
-//} else {
-//    [[NSColor colorWithDeviceWhite:0.85 alpha:1] set];
-//}
-//    float position = self.pageGuidePosition;
-//    if (self.showLineNumbers)
-//      position += 34;
-//    position += 0.5;
-//    [NSBezierPath strokeLineFromPoint:NSMakePoint(position, NSMinY(documentVisibleRect)) toPoint:NSMakePoint(position, NSMaxY(documentVisibleRect))];
-//  }
+//  CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
+//  CGContextSetTextMatrix(context, CGAffineTransformIdentity);
 //  
-//  // draw highlighted elements
-//  NSRange glyphRange;
-//  NSRectArray glyphRects;
-//  NSUInteger glyphRectsIndex;
-//  NSUInteger glyphRectsCount;
-//if ([DuxPreferences editorDarkMode]) {
-//  [[NSColor colorWithCalibratedRed:0.173 green:0.151 blue:0.369 alpha:1.000] set];
-//} else {
-//  [[NSColor colorWithCalibratedRed:0.973 green:0.951 blue:0.769 alpha:1.000] set];
-//}
-//  float glyphRectExtraX = (self.showLineNumbers) ? 33.5 : 0;
-//  for (NSValue *range in self.highlightedElements) {
-//    glyphRange = [layoutManager glyphRangeForCharacterRange:range.rangeValue actualCharacterRange:NULL];
+//  
+//  //  NSUInteger lineIndex = [self.layoutManager lineIndexForCharacterPosition:self.scrollPosition];
+//  NSUInteger characterPosition = self.scrollPosition;
+//  NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
+//  CGFloat lineWidth = self.frame.size.width;
+//  CGFloat yOffset = self.frame.size.height - self.scrollDelta;
+//  CGFloat minYOffset = 0 - [@" " sizeWithAttributes:workingAttributes].height;
+//  
+//  while (yOffset > minYOffset) {
+//    DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
+//    if (!line)
+//      break;
 //    
-//    glyphRects = [layoutManager rectArrayForGlyphRange:glyphRange withinSelectedGlyphRange:glyphRange inTextContainer:textContainer rectCount:&glyphRectsCount];
-//    for (glyphRectsIndex = 0; glyphRectsIndex < glyphRectsCount; glyphRectsIndex++) {
-//      CGRect glyphRect = glyphRects[glyphRectsIndex];
-//      glyphRect.origin.x += glyphRectExtraX;
-//      [NSBezierPath fillRect:glyphRect];
-//    }
+//    yOffset = [line drawInContext:context atYOffset:yOffset width:lineWidth attributes:workingAttributes];
+//    
+//    characterPosition += line.range.length + 1;
 //  }
 //
 //  
-//  // line numbers
-//  if (self.showLineNumbers) {
-//		// background
-////if ([DuxPreferences editorDarkMode]) {
-////    [[NSColor colorWithDeviceWhite:0.2 alpha:0] set];
-////#else
-////    [[NSColor colorWithDeviceWhite:0.85 alpha:1] set];
-////#endif
-////    [NSBezierPath strokeLineFromPoint:NSMakePoint(33.5, NSMinY(documentVisibleRect)) toPoint:NSMakePoint(33.5, NSMaxY(documentVisibleRect))];
-////if ([DuxPreferences editorDarkMode]) {
-////    [[NSColor colorWithDeviceWhite:0.1 alpha:0] set];
-////#else
-////    [[NSColor colorWithDeviceWhite:0.95 alpha:1] set];
-////#endif
-////    [NSBezierPath fillRect:NSMakeRect(0, NSMinY(documentVisibleRect), 33.5, NSMaxY(documentVisibleRect))];
-//    
-//    // line numbers
-//    [self drawLineNumbersInRect:dirtyRect];
-//  }
+//  NSLog(@"not yet implemented");
 //  
-//  [super drawRect:dirtyRect];
-}
+//  
+////	NSRect documentVisibleRect = self.enclosingScrollView.documentVisibleRect;
+////	NSLayoutManager *layoutManager = self.layoutManager;
+////	NSTextContainer *textContainer = self.textContainer;
+////  
+////  // background
+////  [self.backgroundColor set];
+////  NSRectFill(dirtyRect);
+////  
+////  // page guide
+////  if (self.showPageGuide) {
+////if ([DuxPreferences editorDarkMode]) {
+////    [[NSColor colorWithDeviceWhite:1 alpha:0.1] set];
+////} else {
+////    [[NSColor colorWithDeviceWhite:0.85 alpha:1] set];
+////}
+////    float position = self.pageGuidePosition;
+////    if (self.showLineNumbers)
+////      position += 34;
+////    position += 0.5;
+////    [NSBezierPath strokeLineFromPoint:NSMakePoint(position, NSMinY(documentVisibleRect)) toPoint:NSMakePoint(position, NSMaxY(documentVisibleRect))];
+////  }
+////  
+////  // draw highlighted elements
+////  NSRange glyphRange;
+////  NSRectArray glyphRects;
+////  NSUInteger glyphRectsIndex;
+////  NSUInteger glyphRectsCount;
+////if ([DuxPreferences editorDarkMode]) {
+////  [[NSColor colorWithCalibratedRed:0.173 green:0.151 blue:0.369 alpha:1.000] set];
+////} else {
+////  [[NSColor colorWithCalibratedRed:0.973 green:0.951 blue:0.769 alpha:1.000] set];
+////}
+////  float glyphRectExtraX = (self.showLineNumbers) ? 33.5 : 0;
+////  for (NSValue *range in self.highlightedElements) {
+////    glyphRange = [layoutManager glyphRangeForCharacterRange:range.rangeValue actualCharacterRange:NULL];
+////    
+////    glyphRects = [layoutManager rectArrayForGlyphRange:glyphRange withinSelectedGlyphRange:glyphRange inTextContainer:textContainer rectCount:&glyphRectsCount];
+////    for (glyphRectsIndex = 0; glyphRectsIndex < glyphRectsCount; glyphRectsIndex++) {
+////      CGRect glyphRect = glyphRects[glyphRectsIndex];
+////      glyphRect.origin.x += glyphRectExtraX;
+////      [NSBezierPath fillRect:glyphRect];
+////    }
+////  }
+////
+////  
+////  // line numbers
+////  if (self.showLineNumbers) {
+////		// background
+//////if ([DuxPreferences editorDarkMode]) {
+//////    [[NSColor colorWithDeviceWhite:0.2 alpha:0] set];
+//////#else
+//////    [[NSColor colorWithDeviceWhite:0.85 alpha:1] set];
+//////#endif
+//////    [NSBezierPath strokeLineFromPoint:NSMakePoint(33.5, NSMinY(documentVisibleRect)) toPoint:NSMakePoint(33.5, NSMaxY(documentVisibleRect))];
+//////if ([DuxPreferences editorDarkMode]) {
+//////    [[NSColor colorWithDeviceWhite:0.1 alpha:0] set];
+//////#else
+//////    [[NSColor colorWithDeviceWhite:0.95 alpha:1] set];
+//////#endif
+//////    [NSBezierPath fillRect:NSMakeRect(0, NSMinY(documentVisibleRect), 33.5, NSMaxY(documentVisibleRect))];
+////    
+////    // line numbers
+////    [self drawLineNumbersInRect:dirtyRect];
+////  }
+////  
+////  [super drawRect:dirtyRect];
+//}
 
 - (void)selectionDidChange:(NSNotification *)notif
 {
@@ -1440,6 +1485,7 @@ if ([DuxPreferences editorDarkMode]) {
 
   
   [self setNeedsDisplay:YES];
+  [self updateLayers];
 }
 - (void)scrollAction:(id)sender
 {
@@ -1489,6 +1535,11 @@ if ([DuxPreferences editorDarkMode]) {
 {
   self.scrollDelta += (theEvent.deltaY * 2);
   [self setNeedsDisplay:YES];
+}
+
+- (BOOL)isOpaque
+{
+  return YES;
 }
 
 @end
