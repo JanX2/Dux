@@ -32,6 +32,8 @@
 		385A1EA0147917590084F48E /* DuxCSSPseudoSelectorElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 385A1E9F147917590084F48E /* DuxCSSPseudoSelectorElement.m */; };
 		385A1EA3147918770084F48E /* DuxCSSDefinitionBlockElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 385A1EA2147918770084F48E /* DuxCSSDefinitionBlockElement.m */; };
 		385A1EA6147919A80084F48E /* DuxCSSPropertyNameElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 385A1EA5147919A80084F48E /* DuxCSSPropertyNameElement.m */; };
+		3869817717292BE2004D0C4B /* DuxLine.m in Sources */ = {isa = PBXBuildFile; fileRef = 3869817417292BE2004D0C4B /* DuxLine.m */; };
+		3869817817292BE2004D0C4B /* DuxTextStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 3869817617292BE2004D0C4B /* DuxTextStorage.m */; };
 		386ADEF7168DA6F800C961DA /* DuxProjectWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 386ADEF6168DA6F800C961DA /* DuxProjectWindow.m */; };
 		386ADEFB168E316D00C961DA /* DuxDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = 386ADEFA168E316D00C961DA /* DuxDocumentController.m */; };
 		386FE37616194A31002C0755 /* DuxJavaScriptRegexElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 386FE37516194A31002C0755 /* DuxJavaScriptRegexElement.m */; };
@@ -173,6 +175,10 @@
 		385A1EA2147918770084F48E /* DuxCSSDefinitionBlockElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = DuxCSSDefinitionBlockElement.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		385A1EA4147919A70084F48E /* DuxCSSPropertyNameElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxCSSPropertyNameElement.h; sourceTree = "<group>"; };
 		385A1EA5147919A80084F48E /* DuxCSSPropertyNameElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxCSSPropertyNameElement.m; sourceTree = "<group>"; };
+		3869817317292BE2004D0C4B /* DuxLine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxLine.h; sourceTree = "<group>"; };
+		3869817417292BE2004D0C4B /* DuxLine.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxLine.m; sourceTree = "<group>"; };
+		3869817517292BE2004D0C4B /* DuxTextStorage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxTextStorage.h; sourceTree = "<group>"; };
+		3869817617292BE2004D0C4B /* DuxTextStorage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxTextStorage.m; sourceTree = "<group>"; };
 		386ADEF5168DA6F800C961DA /* DuxProjectWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxProjectWindow.h; sourceTree = "<group>"; };
 		386ADEF6168DA6F800C961DA /* DuxProjectWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxProjectWindow.m; sourceTree = "<group>"; };
 		386ADEF9168E316D00C961DA /* DuxDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxDocumentController.h; sourceTree = "<group>"; };
@@ -388,6 +394,10 @@
 			children = (
 				380AED3B14500377005770D7 /* DuxTextView.h */,
 				380AED3C14500377005770D7 /* DuxTextView.m */,
+				3869817317292BE2004D0C4B /* DuxLine.h */,
+				3869817417292BE2004D0C4B /* DuxLine.m */,
+				3869817517292BE2004D0C4B /* DuxTextStorage.h */,
+				3869817617292BE2004D0C4B /* DuxTextStorage.m */,
 				38CD8FA5147F8F0500062D34 /* DuxTextContainer.h */,
 				38CD8FA6147F8F0500062D34 /* DuxTextContainer.m */,
 				3824F07314522FAB00F00B96 /* DuxSyntaxHighlighter.h */,
@@ -938,6 +948,8 @@
 				38D4B49117209FA300B2EDEC /* DuxAcknowledgementsController.m in Sources */,
 				389ACC4D172265A100E01DB3 /* DuxNavigatorFilesViewController.m in Sources */,
 				C97713171724C90B00AC1757 /* DuxNavigatorFileCell.m in Sources */,
+				3869817717292BE2004D0C4B /* DuxLine.m in Sources */,
+				3869817817292BE2004D0C4B /* DuxTextStorage.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1047,7 +1059,7 @@
 				INFOPLIST_FILE = "Dux/Dux-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				OTHER_LDFLAGS = "-licucore";
-				PRODUCT_NAME = Dux;
+				PRODUCT_NAME = "Dux - text view rewrite";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -1064,7 +1076,7 @@
 				INFOPLIST_FILE = "Dux/Dux-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				OTHER_LDFLAGS = "-licucore";
-				PRODUCT_NAME = Dux;
+				PRODUCT_NAME = "Dux - text view rewrite";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;

@@ -375,7 +375,7 @@ static NSArray *loadedBundles;
     
     input = accessory.stringValue;
   } else if ([self.inputType isEqual:DuxBundleInputTypeDocumentContents]) {
-    input = editorView.textStorage.string;
+    input = editorView.storage.string;
   }
   
   NSString *output;

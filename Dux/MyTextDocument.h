@@ -23,10 +23,10 @@
 
 @property (nonatomic, strong) NSTextStorage *textStorage;
 @property (nonatomic, strong) DuxTextView *textView;
-@property (nonatomic, strong) NSScrollView *scrollView;
 @property (nonatomic, strong) DuxSyntaxHighlighter *syntaxtHighlighter;
 @property NSStringEncoding stringEncoding;
 @property (nonatomic, strong) DuxFileContentsWatcher *fileContentsWatcher;
+
 
 // Newline style to be used when inserting new text.
 // The mask returned will only ever contain one of

@@ -546,11 +546,12 @@ static NSMutableArray *projects = nil;
 
 - (IBAction)performFindPanelAction:(id)sender
 {
-  if (!self.document) {
-    return;
-  }
-  
-  [[(MyTextDocument *)self.document textView] performFindPanelAction:sender];
+  NSLog(@"not yet implemented");
+//  if (!self.document) {
+//    return;
+//  }
+//  
+//  [[(MyTextDocument *)self.document textView] performFindPanelAction:sender];
 }
 
 - (IBAction)revealInNavigator:(id)sender

@@ -36,23 +36,18 @@
       [layoutManager addTextContainer:textContainer];
       
       self.textView = [[DuxTextView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100) textContainer:textContainer];
-      self.textView.minSize = NSMakeSize(0, 100);
-      self.textView.maxSize = NSMakeSize(FLT_MAX, FLT_MAX);
-      [self.textView setVerticallyResizable:YES];
-      [self.textView setHorizontallyResizable:NO];
+      self.textView.autoresizingMask =    NSViewMinXMargin | NSViewWidthSizable | NSViewMaxXMargin | NSViewMinYMargin | NSViewHeightSizable | NSViewMaxYMargin;
+//      self.textView.minSize = NSMakeSize(0, 100);
+//      self.textView.maxSize = NSMakeSize(FLT_MAX, FLT_MAX);
+//      [self.textView setVerticallyResizable:YES];
+//      [self.textView setHorizontallyResizable:NO];
       [self.textView setAutoresizingMask:NSViewWidthSizable];
-      self.textView.usesFindBar = YES;
+//      self.textView.usesFindBar = YES;
       self.textView.textDocument = self;
-      self.textView.typingAttributes = @{NSFontAttributeName:[DuxPreferences editorFont]};
+//      self.textView.typingAttributes = @{NSFontAttributeName:[DuxPreferences editorFont]};
       
-      self.scrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100)];
-      self.scrollView.borderType = NSNoBorder;
-      self.scrollView.hasVerticalScroller = YES;
-      self.scrollView.hasHorizontalScroller = NO;
-      self.scrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-      self.scrollView.documentView = self.textView;
 if ([DuxPreferences editorDarkMode]) {
-      self.scrollView.backgroundColor = [NSColor colorWithCalibratedWhite:0.2 alpha:1];
+      self.textView.backgroundColor = [NSColor colorWithCalibratedWhite:0.2 alpha:1];
 }
       
       // load text into view
@@ -111,12 +106,12 @@ if ([DuxPreferences editorDarkMode]) {
 {
   self.editorWindow = controller.editorWindow;
   
-  [self.scrollView setFrame:NSMakeRect(0, 0, documentView.frame.size.width, documentView.frame.size.height)];
-  [documentView addSubview:self.scrollView];
+  [self.textView setFrame:NSMakeRect(0, 0, documentView.frame.size.width, documentView.frame.size.height)];
+  [documentView addSubview:self.textView];
   
   
   // make sure scroll bars are good
-  [self.textView.layoutManager ensureLayoutForTextContainer:self.textView.textContainer];
+//  [self.textView.layoutManager ensureLayoutForTextContainer:self.textView.textContainer];
   
   // make text view the first responder
   if (makeFirstResponder) {
@@ -167,7 +162,8 @@ if ([DuxPreferences editorDarkMode]) {
   }
   self.stringEncoding = encoding;
   
-  [textContentStorage replaceCharactersInRange:NSMakeRange(0, textContentStorage.length) withAttributedString:[[NSAttributedString alloc] initWithString:textContentToLoad attributes:@{NSFontAttributeName:[DuxPreferences editorFont]}]];
+  self.textView.string = textContentToLoad;
+//  [textContentStorage replaceCharactersInRange:NSMakeRange(0, textContentStorage.length) withAttributedString:[[NSAttributedString alloc] initWithString:textContentToLoad attributes:@{NSFontAttributeName:[DuxPreferences editorFont]}]];
   
   
   // figure out what language to use
@@ -262,16 +258,17 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (IBAction)convertToNewlineStyleFromMenuItem:(NSMenuItem *)sender
 {
-  DuxNewlineOptions newlineStyle = [sender tag];
-  
-  NSString *oldString = self.textView.string;
-  NSString *newString = [oldString stringByReplacingNewlinesWithNewline:newlineStyle];
-  
-  self.textView.string = newString;
-  
-  self.activeNewlineStyle = newlineStyle;
-  [self updateNewlineStyleMenuStates];
-  [self updateLineEndingsInUseMenuItem];
+  NSLog(@"not yet implemented");
+//  DuxNewlineOptions newlineStyle = [sender tag];
+//  
+//  NSString *oldString = self.textView.string;
+//  NSString *newString = [oldString stringByReplacingNewlinesWithNewline:newlineStyle];
+//  
+//  self.textView.string = newString;
+//  
+//  self.activeNewlineStyle = newlineStyle;
+//  [self updateNewlineStyleMenuStates];
+//  [self updateLineEndingsInUseMenuItem];
 }
 
 - (IBAction)setActiveEncoding:(NSMenuItem *)sender
@@ -319,38 +316,42 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (BOOL)convertContentToEncoding:(NSStringEncoding)newEncoding
 {
-  NSData *data = [textContentStorage.string dataUsingEncoding:newEncoding allowLossyConversion:NO];
-  if (!data)
-    return NO;
-  
-  NSString *newString = [[NSString alloc] initWithData:data encoding:newEncoding];
-  if (!newString)
-    return NO;
-
-  self.stringEncoding = newEncoding;
-  self.textView.string = newString;
-  [self updateEncodingMenuItems];
-  
-  return YES;
+  NSLog(@"not yet implemented");
+  return NO;
+//  NSData *data = [textContentStorage.string dataUsingEncoding:newEncoding allowLossyConversion:NO];
+//  if (!data)
+//    return NO;
+//  
+//  NSString *newString = [[NSString alloc] initWithData:data encoding:newEncoding];
+//  if (!newString)
+//    return NO;
+//
+//  self.stringEncoding = newEncoding;
+//  self.textView.string = newString;
+//  [self updateEncodingMenuItems];
+//  
+//  return YES;
 }
 
 - (BOOL)reinterprateContentWithEncoding:(NSStringEncoding)newEncoding
-{ 
-  // convert to NSData with current encoding
-  NSData *data = [textContentStorage.string dataUsingEncoding:self.stringEncoding];
-  
-  // try to read with the new encoding
-  NSString *newString = [[NSString alloc] initWithData:data encoding:newEncoding];
-  if (!newString) {
-    return NO;
-  }
-  
-  // apply new string
-  self.stringEncoding = newEncoding;
-  self.textView.string = newString;
-  [self updateEncodingMenuItems];
-  
-  return YES;
+{
+  NSLog(@"not yet implemented");
+  return NO;
+//  // convert to NSData with current encoding
+//  NSData *data = [textContentStorage.string dataUsingEncoding:self.stringEncoding];
+//  
+//  // try to read with the new encoding
+//  NSString *newString = [[NSString alloc] initWithData:data encoding:newEncoding];
+//  if (!newString) {
+//    return NO;
+//  }
+//  
+//  // apply new string
+//  self.stringEncoding = newEncoding;
+//  self.textView.string = newString;
+//  [self updateEncodingMenuItems];
+//  
+//  return YES;
 }
 
 - (void)updateNewlineStyleMenuStates
