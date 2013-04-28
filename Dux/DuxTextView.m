@@ -1021,7 +1021,7 @@ if ([DuxPreferences editorDarkMode]) {
   NSUInteger characterPosition = self.scrollPosition;
   NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
   CGFloat lineWidth = self.frame.size.width;
-  CGFloat yOffset = 0 - self.scrollDelta;
+  CGFloat yOffset = self.frame.size.height - self.scrollDelta;
   CGFloat minYOffset = 0 - [@" " sizeWithAttributes:workingAttributes].height;
 
   while (yOffset > minYOffset) {
@@ -1037,7 +1037,7 @@ if ([DuxPreferences editorDarkMode]) {
     [self.layer addSublayer:line];
     [line setOpaque:YES];
     [line setNeedsDisplay];
-    yOffset += lineHeight;
+    yOffset -= lineHeight;
   }
 }
 
