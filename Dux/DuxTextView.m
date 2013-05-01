@@ -1008,7 +1008,9 @@ if ([DuxPreferences editorDarkMode]) {
   
   NSUInteger characterPosition = self.scrollPosition;
   NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
-  CGFloat lineWidth = self.frame.size.width;
+  CGFloat leftGutter = 4;
+  CGFloat rightGutter = 4;
+  CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
   CGFloat yOffset = self.frame.size.height;
   CGFloat minYOffset = 0 - [@" " sizeWithAttributes:workingAttributes].height;
   
@@ -1027,7 +1029,7 @@ if ([DuxPreferences editorDarkMode]) {
     
     characterPosition = line.range.location + line.range.length + 1;
     
-    line.frame = CGRectMake(0, yOffset - lineHeight, lineWidth, lineHeight);
+    line.frame = CGRectMake(leftGutter, yOffset - lineHeight, lineWidth, lineHeight);
     [self.layer addSublayer:line];
     [line setOpaque:YES];
     [line setNeedsDisplay];
