@@ -1021,7 +1021,7 @@ if ([DuxPreferences editorDarkMode]) {
   NSUInteger characterPosition = self.scrollPosition;
   NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
   CGFloat lineWidth = self.frame.size.width;
-  CGFloat yOffset = self.frame.size.height - self.scrollDelta;
+  CGFloat yOffset = round(self.frame.size.height - self.scrollDelta);
   CGFloat minYOffset = 0 - [@" " sizeWithAttributes:workingAttributes].height;
   
   while (yOffset > minYOffset) {
@@ -1037,7 +1037,9 @@ if ([DuxPreferences editorDarkMode]) {
     [self.layer addSublayer:line];
     [line setOpaque:YES];
     [line setNeedsDisplay];
+    
     yOffset -= lineHeight;
+    yOffset = round(yOffset);
   }
 }
 
@@ -1527,6 +1529,7 @@ if ([DuxPreferences editorDarkMode]) {
     //    NSLog(@"%f of %f: %f - %f = %f", (float)self.verticalScroller.doubleValue, (float)self.storage.string.length, (float)scrollCharacterPosition, (float)line.range.location, (float)(scrollCharacterPosition - line.range.location));
     self.scrollDelta = 0 - ([line heightWithWidth:self.frame.size.width attributes:self.textAttributes] * ((scrollCharacterPosition - line.range.location) / line.range.length));
     
+    [self updateLayers];
     [self setNeedsDisplay:YES];
   }
 }
@@ -1534,6 +1537,7 @@ if ([DuxPreferences editorDarkMode]) {
 - (void)scrollWheel:(NSEvent *)theEvent
 {
   self.scrollDelta += (theEvent.deltaY * 2);
+  [self updateLayers];
   [self setNeedsDisplay:YES];
 }
 
