@@ -73,20 +73,9 @@ static NSCharacterSet *newlineCharacterSet;
   self.scrollPosition = 0;
   self.scrollDelta = 0;
   
-  CGFloat scrollerWidth = [NSScroller scrollerWidthForControlSize:NSRegularControlSize scrollerStyle:NSScrollerStyleLegacy];
-  self.verticalScroller = [[NSScroller alloc] initWithFrame:NSMakeRect(self.frame.size.width - scrollerWidth, 0, scrollerWidth, self.frame.size.height)];
-  self.verticalScroller.autoresizingMask = NSViewMinXMargin | NSViewMinYMargin | NSViewHeightSizable | NSViewMaxYMargin;
-  self.verticalScroller.scrollerStyle = NSScrollerStyleLegacy;
-  self.verticalScroller.target = self;
-  self.verticalScroller.action = @selector(scrollAction:);
-  [self addSubview:self.verticalScroller];
-
   self.wantsLayer = YES;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
   [self updateLayers];
-  
-  
-  
   
 if ([DuxPreferences editorDarkMode]) {
   self.insertionPointColor = [NSColor colorWithCalibratedWhite:1 alpha:1];
@@ -1031,7 +1020,7 @@ if ([DuxPreferences editorDarkMode]) {
     
     CGFloat lineHeight = [line heightWithWidth:lineWidth attributes:workingAttributes];
     
-    characterPosition += line.range.length + 2;
+    characterPosition = line.range.location + line.range.length + 1;
     
     line.frame = CGRectMake(0, yOffset - lineHeight, lineWidth, lineHeight);
     [self.layer addSublayer:line];
@@ -1481,64 +1470,27 @@ if ([DuxPreferences editorDarkMode]) {
 {
   self.storage.string = string;
   
-  self.verticalScroller.doubleValue = self.scrollPosition / string.length; // string.length should really me maxScrollPosition - which is the character that would be near the top if the last character is visible
-  self.verticalScroller.knobProportion = 0.1; // this needs to be characterLengthOfVisibleString / maxScrollPosition
-  [self.verticalScroller setEnabled:YES];
-
-  
-  [self setNeedsDisplay:YES];
   [self updateLayers];
-}
-- (void)scrollAction:(id)sender
-{
-  if (sender == self.verticalScroller) {
-    CGFloat scrollCharacterPosition;
-    switch ([self.verticalScroller hitPart]) {
-      case NSScrollerNoPart:
-        return;
-        break;
-      case NSScrollerDecrementPage:
-        NSLog(@"decrementPage");
-        return;
-        break;
-      case NSScrollerKnob:
-      case NSScrollerKnobSlot:
-        scrollCharacterPosition = self.storage.string.length * self.verticalScroller.doubleValue;
-        break;
-      case NSScrollerIncrementPage:
-        NSLog(@"incrementPage");
-        return;
-        break;
-      case NSScrollerDecrementLine:
-        NSLog(@"decrementLine");
-        return;
-        break;
-      case NSScrollerIncrementLine:
-        NSLog(@"incrementLine");
-        return;
-        break;
-      default:
-        return;
-    }
-    
-    // find the line and set our scroll position to it's first character
-    DuxLine *line = [self.storage lineAtCharacterPosition:scrollCharacterPosition];
-    self.scrollPosition = line.range.location;
-    
-    // set our scrollDelta to how far along the line we tried to scroll
-    //    NSLog(@"%f of %f: %f - %f = %f", (float)self.verticalScroller.doubleValue, (float)self.storage.string.length, (float)scrollCharacterPosition, (float)line.range.location, (float)(scrollCharacterPosition - line.range.location));
-    self.scrollDelta = 0 - ([line heightWithWidth:self.frame.size.width attributes:self.textAttributes] * ((scrollCharacterPosition - line.range.location) / line.range.length));
-    
-    [self updateLayers];
-    [self setNeedsDisplay:YES];
-  }
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent
 {
-  self.scrollDelta += (theEvent.deltaY * 2);
-  [self updateLayers];
-  [self setNeedsDisplay:YES];
+  CGFloat oldPosition = self.scrollPosition;
+  CGFloat newPosition;
+  
+  newPosition = oldPosition - (theEvent.deltaY * 12);
+  if (newPosition < 0.1)
+    newPosition = 0;
+  
+  if (fabs(newPosition - oldPosition) > 0.1) {
+    DuxLine *line = [self.storage lineAtCharacterPosition:newPosition];
+    self.scrollPosition = newPosition;
+    
+    // set our scrollDelta to how far along the line we tried to scroll
+    self.scrollDelta = 0 - ([line heightWithWidth:self.frame.size.width attributes:self.textAttributes] * ((newPosition - line.range.location) / line.range.length));
+    
+    [self updateLayers];
+  }
 }
 
 - (BOOL)isOpaque

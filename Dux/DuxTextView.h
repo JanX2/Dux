@@ -39,7 +39,6 @@
 
 @property NSUInteger scrollPosition; // character offeset of the first visible line
 @property CGFloat scrollDelta; // float, in pixels, of how far the first visible line is from the the top of the view (0 == top of the first line matches is at the top of the view)
-@property NSScroller *verticalScroller;
 
 @property (strong) IBOutlet NSPanel *goToLinePanel;
 @property (weak) IBOutlet NSSearchField *goToLineSearchField;
