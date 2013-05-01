@@ -71,7 +71,6 @@ static NSCharacterSet *newlineCharacterSet;
   self.textAttributes = @{NSFontAttributeName: [NSFont fontWithName:@"Source Code Pro" size:12], NSParagraphStyleAttributeName:paragraphStyle.copy};
   
   self.scrollPosition = 0;
-  self.scrollDelta = 0;
   
   self.wantsLayer = YES;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
@@ -1010,8 +1009,14 @@ if ([DuxPreferences editorDarkMode]) {
   NSUInteger characterPosition = self.scrollPosition;
   NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
   CGFloat lineWidth = self.frame.size.width;
-  CGFloat yOffset = round(self.frame.size.height - self.scrollDelta);
+  CGFloat yOffset = self.frame.size.height;
   CGFloat minYOffset = 0 - [@" " sizeWithAttributes:workingAttributes].height;
+  
+  DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
+  if (line.range.length > 0) {
+    yOffset += ([line heightWithWidth:lineWidth attributes:workingAttributes] * ((self.scrollPosition - line.range.location) / line.range.length));
+  }
+  yOffset = round(yOffset);
   
   while (yOffset > minYOffset) {
     DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
@@ -1478,16 +1483,16 @@ if ([DuxPreferences editorDarkMode]) {
   CGFloat oldPosition = self.scrollPosition;
   CGFloat newPosition;
   
-  newPosition = oldPosition - (theEvent.deltaY * 12);
+  newPosition = oldPosition - (theEvent.deltaY * 18);
   if (newPosition < 0.1)
     newPosition = 0;
   
   if (fabs(newPosition - oldPosition) > 0.1) {
-    DuxLine *line = [self.storage lineAtCharacterPosition:newPosition];
+//    DuxLine *line = [self.storage lineAtCharacterPosition:newPosition];
     self.scrollPosition = newPosition;
     
     // set our scrollDelta to how far along the line we tried to scroll
-    self.scrollDelta = 0 - ([line heightWithWidth:self.frame.size.width attributes:self.textAttributes] * ((newPosition - line.range.location) / line.range.length));
+//    self.scrollDelta = 0 - ([line heightWithWidth:self.frame.size.width attributes:self.textAttributes] * ((newPosition - line.range.location) / line.range.length));
     
     [self updateLayers];
   }
