@@ -1023,7 +1023,7 @@ if ([DuxPreferences editorDarkMode]) {
   CGFloat lineWidth = self.frame.size.width;
   CGFloat yOffset = self.frame.size.height - self.scrollDelta;
   CGFloat minYOffset = 0 - [@" " sizeWithAttributes:workingAttributes].height;
-
+  
   while (yOffset > minYOffset) {
     DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
     if (!line)
@@ -1031,9 +1031,9 @@ if ([DuxPreferences editorDarkMode]) {
     
     CGFloat lineHeight = [line heightWithWidth:lineWidth attributes:workingAttributes];
     
-    characterPosition += line.range.length + 1;
+    characterPosition += line.range.length + 2;
     
-    line.frame = CGRectMake(0, yOffset, lineWidth, lineHeight);
+    line.frame = CGRectMake(0, yOffset - lineHeight, lineWidth, lineHeight);
     [self.layer addSublayer:line];
     [line setOpaque:YES];
     [line setNeedsDisplay];

@@ -41,7 +41,6 @@
 //      self.textView.maxSize = NSMakeSize(FLT_MAX, FLT_MAX);
 //      [self.textView setVerticallyResizable:YES];
 //      [self.textView setHorizontallyResizable:NO];
-      [self.textView setAutoresizingMask:NSViewWidthSizable];
 //      self.textView.usesFindBar = YES;
       self.textView.textDocument = self;
 //      self.textView.typingAttributes = @{NSFontAttributeName:[DuxPreferences editorFont]};
