@@ -9,6 +9,17 @@
 //
 
 #import "DuxLanguage.h"
+#import "DuxCSSBaseElement.h"
+#import "DuxCSSCommentElement.h"
+#import "DuxCSSClassSelectorElement.h"
+#import "DuxCSSIDSelectorElement.h"
+#import "DuxCSSPseudoSelectorElement.h"
+#import "DuxCSSDefinitionBlockElement.h"
+#import "DuxCSSNumberValueElement.h"
+#import "DuxCSSColorValueElement.h"
+#import "DuxCSSPropertyNameElement.h"
+#import "DuxCSSPropertyValueElement.h"
+#import "DuxCSSAtRuleElement.h"
 
 @interface DuxCSSLanguage : DuxLanguage
 

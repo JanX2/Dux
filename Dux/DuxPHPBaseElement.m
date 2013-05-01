@@ -14,6 +14,9 @@
 @implementation DuxPHPBaseElement
 
 static NSCharacterSet *nextElementCharacterSet;
+static NSCharacterSet *numericCharacterSet;
+static NSCharacterSet *nonNumericCharacterSet;
+static NSCharacterSet *alphabeticCharacterSet;
 static NSRegularExpression *keywordsExpression;
 
 static DuxPHPSingleQuoteStringElement *singleQuoteStringElement;
@@ -29,6 +32,9 @@ static DuxPHPBlockCommentElement *blockCommentElement;
   [super initialize];
   
   nextElementCharacterSet = [NSCharacterSet characterSetWithCharactersInString:@"'\"/#$0123456789"];
+  numericCharacterSet = [NSCharacterSet decimalDigitCharacterSet];
+  nonNumericCharacterSet = [numericCharacterSet invertedSet];
+  alphabeticCharacterSet = [NSCharacterSet letterCharacterSet];
   
   NSArray *keywords = [NSArray arrayWithObjects:@"class", @"extends", @"if", @"public", @"function", @"exit", nil];
   keywordsExpression = [NSRegularExpression regularExpressionWithPattern:[NSString stringWithFormat:@"\\b(%@)\\b", [keywords componentsJoinedByString:@"|"]] options:NSRegularExpressionCaseInsensitive error:NULL];
@@ -66,6 +72,31 @@ static DuxPHPBlockCommentElement *blockCommentElement;
       characterFound = [string.string characterAtIndex:foundCharacterSetRange.location + 1];
       if (characterFound != '/' && characterFound != '*') {
         searchStartLocation++;
+        continue;
+      }
+    }
+    
+    // did we find a number? make sure it is wrapped in non-alpha characters
+    else if ([numericCharacterSet characterIsMember:characterFound]) {
+      BOOL prevCharIsAlphabetic;
+      if (foundCharacterSetRange.location == 0) {
+        prevCharIsAlphabetic = NO;
+      } else {
+        prevCharIsAlphabetic = [alphabeticCharacterSet characterIsMember:[string.string characterAtIndex:foundCharacterSetRange.location - 1]];
+      }
+      
+      NSUInteger nextNonNumericCharacterLocation = [string.string rangeOfCharacterFromSet:nonNumericCharacterSet options:NSLiteralSearch range:NSMakeRange(foundCharacterSetRange.location, string.string.length - foundCharacterSetRange.location)].location;
+      BOOL nextCharIsAlphabetic;
+      if (nextNonNumericCharacterLocation == NSNotFound || [string.string characterAtIndex:nextNonNumericCharacterLocation] == 'x') {
+        nextNonNumericCharacterLocation = string.string.length;
+        nextCharIsAlphabetic = NO;
+      } else {
+        nextCharIsAlphabetic = [alphabeticCharacterSet characterIsMember:[string.string characterAtIndex:nextNonNumericCharacterLocation]];
+      }
+      
+      if (prevCharIsAlphabetic || nextCharIsAlphabetic) {
+        searchStartLocation = nextNonNumericCharacterLocation;
+        keepLooking = YES;
         continue;
       }
     }

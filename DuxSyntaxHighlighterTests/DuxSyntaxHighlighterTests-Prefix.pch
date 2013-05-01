@@ -1,0 +1,7 @@
+//
+// Prefix header for all source files of the 'DuxSyntaxHighlighterTests' target in the 'DuxSyntaxHighlighterTests' project
+//
+
+#ifdef __OBJC__
+  #import <Cocoa/Cocoa.h>
+#endif

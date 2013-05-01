@@ -9,7 +9,6 @@
 //
 
 #import "DuxCSSLanguage.h"
-#import "DuxCSSBaseElement.h"
 
 @implementation DuxCSSLanguage
 

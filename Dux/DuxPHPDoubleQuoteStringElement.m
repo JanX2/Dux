@@ -14,6 +14,7 @@
 @implementation DuxPHPDoubleQuoteStringElement
 
 static NSCharacterSet *nextElementCharacterSet;
+static NSCharacterSet *validVariableCharacterSet;
 static DuxPHPVariableElement *variableElement;
 static NSColor *color;
 
@@ -22,6 +23,7 @@ static NSColor *color;
   [super initialize];
   
   nextElementCharacterSet = [NSCharacterSet characterSetWithCharactersInString:@"\"\\$"];
+  validVariableCharacterSet = [NSCharacterSet characterSetWithCharactersInString:@"abcdefghijklmnopqrstuvwrxyzABCDEFGHIJKLMNOPQRSTUVWRXYZ_"];
   
   variableElement = [DuxPHPVariableElement sharedInstance];
   
@@ -61,6 +63,12 @@ static NSColor *color;
     characterFound = [string.string characterAtIndex:foundRange.location];
     if (characterFound == '\\') {
       searchStartLocation = foundRange.location + 2;
+      continue;
+    }
+    
+    // variable? make sure next char is alphanumeric
+    if (characterFound == '$' && string.string.length > foundRange.location + 1 && ![validVariableCharacterSet characterIsMember:[string.string characterAtIndex:foundRange.location + 1]]) {
+      searchStartLocation = foundRange.location + 1;
       continue;
     }
     

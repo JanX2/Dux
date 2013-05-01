@@ -26,6 +26,7 @@
 				<string>strings</string>
 				<string>css</string>
 				<string>js</string>
+				<string>json</string>
 				<string>php</string>
 				<string>rb</string>
 				<string>go</string>

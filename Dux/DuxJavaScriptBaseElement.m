@@ -10,17 +10,13 @@
 
 #import "DuxJavaScriptBaseElement.h"
 #import "DuxJavaScriptLanguage.h"
-#import "DuxJavaScriptSingleQuotedStringElement.h"
-#import "DuxJavaScriptDoubleQuotedStringElement.h"
-#import "DuxJavaScriptNumberElement.h"
-#import "DuxJavaScriptKeywordElement.h"
-#import "DuxJavaScriptSingleLineCommentElement.h"
-#import "DuxJavaScriptBlockCommentElement.h"
-#import "DuxJavaScriptRegexElement.h"
 
 @implementation DuxJavaScriptBaseElement
 
 static NSCharacterSet *nextElementCharacterSet;
+static NSCharacterSet *numericCharacterSet;
+static NSCharacterSet *nonNumericCharacterSet;
+static NSCharacterSet *alphabeticCharacterSet;
 
 static DuxJavaScriptSingleQuotedStringElement *singleQuotedStringElement;
 static DuxJavaScriptDoubleQuotedStringElement *doubleQuotedStringElement;
@@ -35,6 +31,9 @@ static DuxJavaScriptRegexElement *regexElement;
   [super initialize];
   
   nextElementCharacterSet = [NSCharacterSet characterSetWithCharactersInString:@"'\"/0123456789"];
+  numericCharacterSet = [NSCharacterSet decimalDigitCharacterSet];
+  nonNumericCharacterSet = [numericCharacterSet invertedSet];
+  alphabeticCharacterSet = [NSCharacterSet letterCharacterSet];
   
   singleQuotedStringElement = [DuxJavaScriptSingleQuotedStringElement sharedInstance];
   doubleQuotedStringElement = [DuxJavaScriptDoubleQuotedStringElement sharedInstance];
@@ -67,29 +66,56 @@ static DuxJavaScriptRegexElement *regexElement;
     
     // did we find a / character? check if it's a comment or a regex pattern
     characterFound = [string.string characterAtIndex:foundCharacterSetRange.location];
-    if (string.string.length > (foundCharacterSetRange.location + 1) && characterFound == '/') {
-      characterFound = [string.string characterAtIndex:foundCharacterSetRange.location + 1];
-      if (characterFound == '/') {
-        foundSingleLineComment = YES;
-        foundRegexPattern = NO;
-      } else if (characterFound == '*') {
-        foundSingleLineComment = NO;
-        foundRegexPattern = NO;
-      } else if ([[NSCharacterSet whitespaceAndNewlineCharacterSet] characterIsMember:characterFound]) { // whitespace, not a regex pattern
-        foundSingleLineComment = NO;
-        foundRegexPattern = NO;
-        keepLooking = YES;
-        searchStartLocation += 1;
-        continue;
+    if (characterFound == '/') {
+      if (string.string.length > (foundCharacterSetRange.location + 1)) {
+        characterFound = [string.string characterAtIndex:foundCharacterSetRange.location + 1];
+        if (characterFound == '/') {
+          foundSingleLineComment = YES;
+          foundRegexPattern = NO;
+        } else if (characterFound == '*') {
+          foundSingleLineComment = NO;
+          foundRegexPattern = NO;
+        } else if ([[NSCharacterSet whitespaceAndNewlineCharacterSet] characterIsMember:characterFound]) { // whitespace, not a regex pattern
+          foundSingleLineComment = NO;
+          foundRegexPattern = NO;
+          keepLooking = YES;
+          searchStartLocation += 1;
+          continue;
+        } else { // regex pattern
+          foundSingleLineComment = NO;
+          foundRegexPattern = YES;
+          characterFound = '/';
+        }
       } else { // regex pattern
         foundSingleLineComment = NO;
         foundRegexPattern = YES;
         characterFound = '/';
       }
-    } else { // regex pattern
-      foundSingleLineComment = NO;
-      foundRegexPattern = YES;
-      characterFound = '/';
+    }
+    
+    // did we find a number? make sure it is wrapped in non-alpha characters
+    else if ([numericCharacterSet characterIsMember:characterFound]) {
+      BOOL prevCharIsAlphabetic;
+      if (foundCharacterSetRange.location == 0) {
+        prevCharIsAlphabetic = NO;
+      } else {
+        prevCharIsAlphabetic = [alphabeticCharacterSet characterIsMember:[string.string characterAtIndex:foundCharacterSetRange.location - 1]];
+      }
+      
+      NSUInteger nextNonNumericCharacterLocation = [string.string rangeOfCharacterFromSet:nonNumericCharacterSet options:NSLiteralSearch range:NSMakeRange(foundCharacterSetRange.location, string.string.length - foundCharacterSetRange.location)].location;
+      BOOL nextCharIsAlphabetic;
+      if (nextNonNumericCharacterLocation == NSNotFound || [string.string characterAtIndex:nextNonNumericCharacterLocation] == 'x') {
+        nextNonNumericCharacterLocation = string.string.length;
+        nextCharIsAlphabetic = NO;
+      } else {
+        nextCharIsAlphabetic = [alphabeticCharacterSet characterIsMember:[string.string characterAtIndex:nextNonNumericCharacterLocation]];
+      }
+      
+      if (prevCharIsAlphabetic || nextCharIsAlphabetic) {
+        searchStartLocation = nextNonNumericCharacterLocation;
+        keepLooking = YES;
+        continue;
+      }
     }
     
     keepLooking = NO;

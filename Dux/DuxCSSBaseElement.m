@@ -10,11 +10,6 @@
 
 #import "DuxCSSBaseElement.h"
 #import "DuxCSSLanguage.h"
-#import "DuxCSSCommentElement.h"
-#import "DuxCSSClassSelectorElement.h"
-#import "DuxCSSIDSelectorElement.h"
-#import "DuxCSSPseudoSelectorElement.h"
-#import "DuxCSSDefinitionBlockElement.h"
 
 static NSCharacterSet *nextElementCharacterSet;
 
@@ -23,6 +18,7 @@ static DuxCSSClassSelectorElement *classSelectorElement;
 static DuxCSSIDSelectorElement *idSelectorElement;
 static DuxCSSPseudoSelectorElement *pseudoSelectorElement;
 static DuxCSSDefinitionBlockElement *definitionBlockElement;
+static DuxCSSAtRuleElement *atRuleElement;
 
 @implementation DuxCSSBaseElement
 
@@ -30,13 +26,14 @@ static DuxCSSDefinitionBlockElement *definitionBlockElement;
 {
   [super initialize];
   
-  nextElementCharacterSet = [NSCharacterSet characterSetWithCharactersInString:@"/.#:{"];
+  nextElementCharacterSet = [NSCharacterSet characterSetWithCharactersInString:@"/.#:{@"];
   
   commentElement = [DuxCSSCommentElement sharedInstance];
   classSelectorElement = [DuxCSSClassSelectorElement sharedInstance];
   idSelectorElement = [DuxCSSIDSelectorElement sharedInstance];
   pseudoSelectorElement = [DuxCSSPseudoSelectorElement sharedInstance];
   definitionBlockElement = [DuxCSSDefinitionBlockElement sharedInstance];
+  atRuleElement = [DuxCSSAtRuleElement sharedInstance];
 }
 
 - (id)init
@@ -83,6 +80,9 @@ static DuxCSSDefinitionBlockElement *definitionBlockElement;
       return foundCharacterSetRange.location - startingAt;
     case '#':
       *nextElement = idSelectorElement;
+      return foundCharacterSetRange.location - startingAt;
+    case '@':
+      *nextElement = atRuleElement;
       return foundCharacterSetRange.location - startingAt;
     case ':':
       *nextElement = pseudoSelectorElement;

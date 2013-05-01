@@ -9,7 +9,6 @@
 //
 
 #import "DuxJavaScriptLanguage.h"
-#import "DuxJavaScriptBaseElement.h"
 
 static NSRegularExpression *keywordsExpression;
 static NSIndexSet *keywordIndexSet = nil;

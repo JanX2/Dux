@@ -34,39 +34,43 @@ static NSColor *color;
 {
   // find next character
   NSUInteger searchStart = startingAt + 1;
-  NSRange foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStart, string.string.length - searchStart)];
+  NSUInteger stringLength = string.length;
+  NSRange foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStart, stringLength - searchStart)];
   
   // not found, or the last character in the string?
-  if (foundRange.location == NSNotFound || foundRange.location == (string.string.length - 1))
-    return string.string.length - startingAt;
+  if (foundRange.location == NSNotFound || foundRange.location == (stringLength - 1))
+    return stringLength - startingAt;
   
   // did we just find a known measurment unit (px, pt, %, etc)
-  if (string.string.length > foundRange.location + 1 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 1)] isEqualToString:@"%"]) {
+  if (stringLength > foundRange.location + 1 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 1)] isEqualToString:@"%"]) {
     foundRange.location += 1;
-  }
-  if (string.string.length > foundRange.location + 2 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 2)] isEqualToString:@"in"]) {
-    foundRange.location += 2;
-  }
-  if (string.string.length > foundRange.location + 2 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 2)] isEqualToString:@"cm"]) {
-    foundRange.location += 2;
-  }
-  if (string.string.length > foundRange.location + 2 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 2)] isEqualToString:@"mm"]) {
-    foundRange.location += 2;
-  }
-  if (string.string.length > foundRange.location + 2 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 2)] isEqualToString:@"em"]) {
-    foundRange.location += 2;
-  }
-  if (string.string.length > foundRange.location + 2 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 2)] isEqualToString:@"ex"]) {
-    foundRange.location += 2;
-  }
-  if (string.string.length > foundRange.location + 2 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 2)] isEqualToString:@"pt"]) {
-    foundRange.location += 2;
-  }
-  if (string.string.length > foundRange.location + 2 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 2)] isEqualToString:@"pc"]) {
-    foundRange.location += 2;
-  }
-  if (string.string.length > foundRange.location + 2 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 2)] isEqualToString:@"px"]) {
-    foundRange.location += 2;
+  } else if (stringLength > foundRange.location + 2) {
+    NSString *unit = [string.string substringWithRange:NSMakeRange(foundRange.location, 2)];
+    
+    if ([unit isEqualToString:@"px"]) {
+      foundRange.location += 2;
+    }
+    else if ([unit isEqualToString:@"pt"]) {
+      foundRange.location += 2;
+    }
+    else if ([unit isEqualToString:@"in"]) {
+      foundRange.location += 2;
+    }
+    else if ([unit isEqualToString:@"cm"]) {
+      foundRange.location += 2;
+    }
+    else if ([unit isEqualToString:@"mm"]) {
+      foundRange.location += 2;
+    }
+    else if ([unit isEqualToString:@"em"]) {
+      foundRange.location += 2;
+    }
+    else if ([unit isEqualToString:@"ex"]) {
+      foundRange.location += 2;
+    }
+    else if ([unit isEqualToString:@"pc"]) {
+      foundRange.location += 2;
+    }
   }
   
   return foundRange.location - startingAt;

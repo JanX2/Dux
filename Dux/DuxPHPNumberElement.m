@@ -15,6 +15,7 @@
 @implementation DuxPHPNumberElement
 
 static NSCharacterSet *nextElementCharacterSet;
+static NSCharacterSet *nonHexCharacterSet;
 static NSColor *color;
 
 + (void)initialize
@@ -22,12 +23,13 @@ static NSColor *color;
   [super initialize];
   
   nextElementCharacterSet = [[NSCharacterSet characterSetWithCharactersInString:@"0123456789."] invertedSet];
+  nonHexCharacterSet = [[NSCharacterSet characterSetWithCharactersInString:@"0123456789ABCDEFabcdef"] invertedSet];
   
-if ([DuxPreferences editorDarkMode]) {
-  color = [NSColor colorWithDeviceRed:0.71 green:0.84 blue:1.00 alpha:1.0];
-} else {
-  color = [NSColor colorWithDeviceRed:0.11 green:0.36 blue:0.87 alpha:1.0];
-}
+  if ([DuxPreferences editorDarkMode]) {
+    color = [NSColor colorWithDeviceRed:0.71 green:0.84 blue:1.00 alpha:1.0];
+  } else {
+    color = [NSColor colorWithDeviceRed:0.11 green:0.36 blue:0.87 alpha:1.0];
+  }
 }
 
 - (id)init
@@ -37,12 +39,26 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
 {
-  // find next character
-  NSRange foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, string.string.length - startingAt)];
+  NSUInteger stringLength = string.string.length;
+  NSRange foundRange = NSMakeRange(NSNotFound, 0);
   
-  // not found, or the last character in the string?
-  if (foundRange.location == NSNotFound || foundRange.location == (string.string.length - 1))
-    return string.string.length - startingAt;
+  if (startingAt + 2 < stringLength && [string.string characterAtIndex:startingAt + 1] == 'x') {
+    foundRange = [string.string rangeOfCharacterFromSet:nonHexCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt + 2, stringLength - startingAt - 2)];
+    
+    if (foundRange.location == NSNotFound)
+      return stringLength - startingAt;
+    
+    if (foundRange.location == startingAt + 2)
+      foundRange = NSMakeRange(NSNotFound, 0);
+  }
+  
+  if (foundRange.location == NSNotFound) {
+    foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, stringLength - startingAt)];
+  }
+  
+  if (foundRange.location == NSNotFound) {
+    return stringLength - startingAt;
+  }
   
   return foundRange.location - startingAt;
 }

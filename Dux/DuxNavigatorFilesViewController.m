@@ -299,6 +299,14 @@ static NSArray *filesExcludeList;
   NSLog(@"Got a click at %ld",(unsigned long)selectedRows.firstIndex);
 }
 
+- (IBAction)revealFileInFinder:(id)sender
+{
+  NSInteger clickedRow = [self.filesView clickedRow];
+  NSURL *urlForClickedRow = [self.filesView itemAtRow:clickedRow];
+
+  [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:@[urlForClickedRow]];
+}
+
 - (void)revealFileInNavigator:(NSURL *)fileURL
 {
   // walk down the tree starting at rootURL, untli we get to fileURL
