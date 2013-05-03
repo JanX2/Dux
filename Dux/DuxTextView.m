@@ -996,7 +996,7 @@ if ([DuxPreferences editorDarkMode]) {
 - (void)updateLayer
 {
   [CATransaction begin];
-  [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disables all animations when moving lines around. it would be nice to have this, but they are pinned to the top left
+  [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disables all animations when moving lines around. it would be nice to have this, but it is horribly ugly when the view height changes (due to flipped coordinates)
   
   NSUInteger characterPosition = self.scrollPosition;
   NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
