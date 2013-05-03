@@ -59,7 +59,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   self.lineNumber = lineNumber;
   self.drawsAsynchronously = NO;
   
-  self.contentsGravity = kCAGravityLeft;
+  self.contentsGravity = kCAGravityTopLeft;
   self.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;
   
   return self;

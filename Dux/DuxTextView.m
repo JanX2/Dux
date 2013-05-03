@@ -996,7 +996,8 @@ if ([DuxPreferences editorDarkMode]) {
 - (void)updateLayer
 {
   [CATransaction begin];
-  [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disables all animations when moving lines around. it would be nice to have this, but it is horribly ugly when the view height changes (due to flipped coordinates)
+  [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disable all animations. for now we assume only the line positions will change (don't want to animate that). any line height changes, we will animate
+  BOOL willAnimate = NO;
   
   NSUInteger characterPosition = self.scrollPosition;
   NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
@@ -1021,12 +1022,16 @@ if ([DuxPreferences editorDarkMode]) {
     
     characterPosition = line.range.location + line.range.length + 1;
     
-    if (fabs(line.frame.size.width - lineWidth) > 0.1) {
-      line.frame = CGRectMake(leftGutter, yOffset - lineHeight, lineWidth, lineHeight);
-      [line setNeedsDisplay];
-    } else {
-      line.frame = CGRectMake(leftGutter, yOffset - lineHeight, lineWidth, lineHeight);
+    BOOL heightChanged = (fabs(line.frame.size.height - lineHeight) > 0.1);
+    if (heightChanged && !willAnimate) {
+      [CATransaction setValue: (id) kCFBooleanFalse forKey: kCATransactionDisableActions];
+      willAnimate = YES;
     }
+    
+    line.frame = CGRectMake(leftGutter, yOffset - lineHeight, lineWidth, lineHeight);
+    if (heightChanged)
+      [line setNeedsDisplay];
+    
     [lineLayers addObject:line];
     
     yOffset -= lineHeight;
