@@ -8,11 +8,16 @@
 
 #import "DuxLine.h"
 #import "DuxTextStorage.h"
+#import "DuxPreferences.h"
+
+#define DUX_LINE_NUMBER_WIDTH 40
+static NSDictionary *lineNumberAttributes;
 
 @interface DuxLine ()
 
 @property (weak) DuxTextStorage *storage;
 @property NSRange range;
+@property NSString *lineNumber;
 
 @end
 
@@ -25,16 +30,33 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     nonWhitespaceCharacterSet = [[NSCharacterSet whitespaceCharacterSet] invertedSet];
+    
+    NSMutableParagraphStyle *paragraphStyle = [[[NSParagraphStyle alloc] init] mutableCopy];
+    [paragraphStyle setAlignment:NSRightTextAlignment];
+    [paragraphStyle setLineBreakMode:NSLineBreakByTruncatingMiddle];
+    if ([DuxPreferences editorDarkMode]) {
+      lineNumberAttributes = [[NSDictionary alloc] initWithObjectsAndKeys:[NSFont fontWithName:@"Source Code Pro ExtraLight" size:10], NSFontAttributeName,
+                          [NSColor colorWithCalibratedWhite:1 alpha:0.8], NSForegroundColorAttributeName,
+                          paragraphStyle, NSParagraphStyleAttributeName,
+                          nil];
+    } else {
+      lineNumberAttributes = [[NSDictionary alloc] initWithObjectsAndKeys:[NSFont fontWithName:@"Source Code Pro Light" size:10], NSFontAttributeName,
+                          [NSColor colorWithCalibratedWhite:0 alpha:1], NSForegroundColorAttributeName,
+                          paragraphStyle, NSParagraphStyleAttributeName,
+                          nil];
+    }
+
   });
 }
 
-- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range
+- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSString *)lineNumber
 {
   if (!(self = [super init]))
     return nil;
   
   self.storage = storage;
   self.range = range;
+  self.lineNumber = lineNumber;
   
   return self;
 }
@@ -44,7 +66,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   NSAttributedString *stringToDraw = [[NSAttributedString alloc] initWithString:[self.storage.string substringWithRange:self.range] attributes:textAttributes];
   
   CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
-  CGSize lineSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(width, CGFLOAT_MAX), NULL);
+  CGSize lineSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(width - DUX_LINE_NUMBER_WIDTH, CGFLOAT_MAX), NULL);
   
   return lineSize.height;
 }
@@ -96,8 +118,8 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   
   //Create Frame
   CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
-  CGFloat lineHeight = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(lineWidth, CGFLOAT_MAX), NULL).height;
-  CGRect lineRect = (CGRect){{0, 0}, {lineWidth, lineHeight}};
+  CGFloat lineHeight = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(lineWidth - DUX_LINE_NUMBER_WIDTH, CGFLOAT_MAX), NULL).height;
+  CGRect lineRect = (CGRect){{DUX_LINE_NUMBER_WIDTH, 0}, {lineWidth - DUX_LINE_NUMBER_WIDTH, lineHeight}};
   lineRect.origin.y = self.frame.size.height - lineRect.size.height;
   
   //Draw Frame
@@ -105,6 +127,20 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   CTFrameRef frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
   CTFrameDraw(frame, context);
   CFRelease(path);
+  
+  // draw line number
+  if (self.lineNumber) {
+    stringToDraw = [[NSAttributedString alloc] initWithString:self.lineNumber attributes:lineNumberAttributes]; // empty line has zero height, so we force a space
+    framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
+    
+    lineRect.origin.x = 0;
+    lineRect.origin.y -= 2;
+    lineRect.size.width = DUX_LINE_NUMBER_WIDTH - 10;
+    path = CGPathCreateWithRect(lineRect, NULL);
+    frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
+    CTFrameDraw(frame, context);
+    CFRelease(path);
+  }
   
   // move to next line
   return yOffset - lineHeight;

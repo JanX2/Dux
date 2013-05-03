@@ -12,7 +12,7 @@
 
 @interface DuxLine : CALayer
 
-- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range;
+- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSString *)lineNumber;
 
 @property (readonly, weak) DuxTextStorage *storage;
 @property (readonly) NSRange range;

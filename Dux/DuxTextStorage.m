@@ -9,7 +9,17 @@
 #import "DuxTextStorage.h"
 #import "DuxLine.h"
 
+static NSCharacterSet *newlineCharacters;
+
 @implementation DuxTextStorage
+
++ (void)initialize
+{
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    newlineCharacters = [NSCharacterSet newlineCharacterSet];
+  });
+}
 
 - (id)init
 {
@@ -17,6 +27,9 @@
     return nil;
   
   contents = [[NSMutableString alloc] init];
+  lineNumbers = [NSPointerArray strongObjectsPointerArray];
+  
+  [self findLineNumbers];
   
   return self;
 }
@@ -29,6 +42,27 @@
 - (void)setString:(NSString *)string
 {
   contents = string.mutableCopy;
+  [self findLineNumbers];
+}
+
+- (void)findLineNumbers
+{
+  // find line numbers
+  NSUInteger index = 0;
+  NSUInteger lineStart = 0;
+  while (index <= 99999) {
+    index++;
+    
+    [lineNumbers setCount:lineStart + 1];
+    
+    [lineNumbers insertPointer:(void *)[NSString stringWithFormat:@"%lu", (unsigned long)index] atIndex:lineStart];
+    
+    lineStart = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch range:NSMakeRange(lineStart, contents.length - lineStart)].location;
+    if (lineStart == NSNotFound)
+      break;
+    
+    lineStart++;
+  }
 }
 
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string
@@ -40,8 +74,6 @@
 {
   if (characterPosition >= self.string.length)
     return nil;
-  
-  NSCharacterSet *newlineCharacters = [NSCharacterSet newlineCharacterSet];
   
   NSUInteger lineStart, lineEnd;
   
@@ -59,7 +91,7 @@
   if (lineEnd == NSNotFound)
     lineEnd = self.string.length;
   
-  return [[DuxLine alloc] initWithStorage:self range:NSMakeRange(lineStart, lineEnd - lineStart)];
+  return [[DuxLine alloc] initWithStorage:self range:NSMakeRange(lineStart, lineEnd - lineStart) lineNumber:[lineNumbers pointerAtIndex:lineStart]];
 }
 
 @end

@@ -13,6 +13,7 @@
 @interface DuxTextStorage : NSObject
 {
   NSMutableString *contents;
+  NSPointerArray *lineNumbers;
 }
 
 @property NSString *string;
