@@ -57,6 +57,10 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   self.storage = storage;
   self.range = range;
   self.lineNumber = lineNumber;
+  self.drawsAsynchronously = NO;
+  
+  self.contentsGravity = kCAGravityLeft;
+  self.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;
   
   return self;
 }

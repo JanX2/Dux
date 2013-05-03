@@ -50,18 +50,23 @@ static NSCharacterSet *newlineCharacters;
   // find line numbers
   NSUInteger index = 0;
   NSUInteger lineStart = 0;
+  NSUInteger lineEnd = 0;
+  DuxLine *line;
   while (index <= 99999) {
     index++;
     
+    lineEnd = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch range:NSMakeRange(lineStart, contents.length - lineStart)].location;
+    if (lineEnd == NSNotFound)
+      lineEnd = contents.length - 1;
+    
+    line = [[DuxLine alloc] initWithStorage:self range:NSMakeRange(lineStart, lineEnd - lineStart) lineNumber:[NSString stringWithFormat:@"%lu", (unsigned long)index]];
+    
     [lineNumbers setCount:lineStart + 1];
+    [lineNumbers insertPointer:(void *)line atIndex:lineStart];
     
-    [lineNumbers insertPointer:(void *)[NSString stringWithFormat:@"%lu", (unsigned long)index] atIndex:lineStart];
-    
-    lineStart = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch range:NSMakeRange(lineStart, contents.length - lineStart)].location;
-    if (lineStart == NSNotFound)
+    lineStart = lineEnd + 1;
+    if (lineStart >= contents.length)
       break;
-    
-    lineStart++;
   }
 }
 
@@ -75,23 +80,14 @@ static NSCharacterSet *newlineCharacters;
   if (characterPosition >= self.string.length)
     return nil;
   
-  NSUInteger lineStart, lineEnd;
-  
+  NSUInteger lineStart;
   NSRange lineStartRange = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch | NSBackwardsSearch range:NSMakeRange(0, characterPosition)];
   if (lineStartRange.location == NSNotFound || lineStartRange.location == 0)
     lineStart = 0;
   else
     lineStart = lineStartRange.location + lineStartRange.length;
   
-  if (lineStart == (self.string.length - 1)) {
-    lineEnd = NSNotFound;
-  } else {
-    lineEnd = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch range:NSMakeRange(lineStart, self.string.length - lineStart)].location;
-  }
-  if (lineEnd == NSNotFound)
-    lineEnd = self.string.length;
-  
-  return [[DuxLine alloc] initWithStorage:self range:NSMakeRange(lineStart, lineEnd - lineStart) lineNumber:[lineNumbers pointerAtIndex:lineStart]];
+  return [lineNumbers pointerAtIndex:lineStart];
 }
 
 @end

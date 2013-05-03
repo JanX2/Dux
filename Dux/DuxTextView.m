@@ -74,7 +74,8 @@ static NSCharacterSet *newlineCharacterSet;
   
   self.wantsLayer = YES;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
-  [self updateLayers];
+  [self.layer setNeedsDisplay];
+//  self.layer.sublayerTransform = CATransform3DMakeScale(1.0f, -1.0f, 1.0f);
   
 if ([DuxPreferences editorDarkMode]) {
   self.insertionPointColor = [NSColor colorWithCalibratedWhite:1 alpha:1];
@@ -985,13 +986,6 @@ if ([DuxPreferences editorDarkMode]) {
 //  [super setNeedsDisplayInRect:rect avoidAdditionalLayout:flag];
 }
 
-- (void)setFrame:(NSRect)frameRect
-{
-  [super setFrame:frameRect];
-  
-  [self updateLayers];
-}
-
 //- (void)drawLayer:(CALayer *)layer inContext:(CGContextRef)context
 //{
 //  CGColorRef bgColor = [NSColor blueColor].CGColor;
@@ -999,12 +993,10 @@ if ([DuxPreferences editorDarkMode]) {
 //  CGContextFillRect(context, layer.bounds);
 //}
 
-- (void)updateLayers
+- (void)updateLayer
 {
-  // kill all existing layers
-  for (CALayer *layer in self.layer.sublayers.copy) {
-    [layer removeFromSuperlayer];
-  }
+  [CATransaction begin];
+  [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disables all animations when moving lines around. it would be nice to have this, but they are pinned to the top left
   
   NSUInteger characterPosition = self.scrollPosition;
   NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
@@ -1012,7 +1004,6 @@ if ([DuxPreferences editorDarkMode]) {
   CGFloat rightGutter = 4;
   CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
   CGFloat yOffset = self.frame.size.height;
-  CGFloat minYOffset = 0 - [@" " sizeWithAttributes:workingAttributes].height;
   
   DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
   if (line.range.length > 0) {
@@ -1020,7 +1011,8 @@ if ([DuxPreferences editorDarkMode]) {
   }
   yOffset = round(yOffset);
   
-  while (yOffset > minYOffset) {
+  NSMutableSet *lineLayers = [[NSMutableSet alloc] init];
+  while (yOffset > -200) { // layout lines for a couple hundred extra pixels to improve animations
     DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
     if (!line)
       break;
@@ -1029,14 +1021,32 @@ if ([DuxPreferences editorDarkMode]) {
     
     characterPosition = line.range.location + line.range.length + 1;
     
-    line.frame = CGRectMake(leftGutter, yOffset - lineHeight, lineWidth, lineHeight);
-    [self.layer addSublayer:line];
-    [line setOpaque:YES];
-    [line setNeedsDisplay];
+    if (fabs(line.frame.size.width - lineWidth) > 0.1) {
+      line.frame = CGRectMake(leftGutter, yOffset - lineHeight, lineWidth, lineHeight);
+      [line setNeedsDisplay];
+    } else {
+      line.frame = CGRectMake(leftGutter, yOffset - lineHeight, lineWidth, lineHeight);
+    }
+    [lineLayers addObject:line];
     
     yOffset -= lineHeight;
     yOffset = round(yOffset);
   }
+  
+  for (CALayer *layer in self.layer.sublayers.copy) {
+    if (![lineLayers containsObject:layer])
+      [layer removeFromSuperlayer];
+  }
+  
+  for (CALayer *layer in lineLayers) {
+    if ([self.layer.sublayers containsObject:layer])
+      continue;
+    
+    [self.layer addSublayer:layer];
+    [layer setNeedsDisplay];
+  }
+  
+  [CATransaction commit];
 }
 
 //- (void)drawRect:(NSRect)dirtyRect
@@ -1477,7 +1487,7 @@ if ([DuxPreferences editorDarkMode]) {
 {
   self.storage.string = string;
   
-  [self updateLayers];
+  [self.layer setNeedsDisplay];
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent
@@ -1496,7 +1506,7 @@ if ([DuxPreferences editorDarkMode]) {
     // set our scrollDelta to how far along the line we tried to scroll
 //    self.scrollDelta = 0 - ([line heightWithWidth:self.frame.size.width attributes:self.textAttributes] * ((newPosition - line.range.location) / line.range.length));
     
-    [self updateLayers];
+    [self.layer setNeedsDisplay];
   }
 }
 
