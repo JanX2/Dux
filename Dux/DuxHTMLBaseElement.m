@@ -37,19 +37,19 @@ static DuxHTMLCommentElement *commentElement;
   return [self initWithLanguage:[DuxHTMLLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   // search for next character
-  NSRange foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, string.length - startingAt)];
+  NSRange foundRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, string.length - startingAt)];
 
   // reached end of string?
   if (foundRange.location == NSNotFound)
     return string.length - startingAt;
   
   // did we find a comment?
-  unichar characterFound = [string.string characterAtIndex:foundRange.location];
+  unichar characterFound = [string characterAtIndex:foundRange.location];
   if (characterFound == '<' && string.length > foundRange.location + 3) {
-    if ([[string.string substringWithRange:NSMakeRange(foundRange.location + 1, 3)] isEqualToString:@"!--"])
+    if ([[string substringWithRange:NSMakeRange(foundRange.location + 1, 3)] isEqualToString:@"!--"])
       characterFound = '!';
   }
   
@@ -67,7 +67,7 @@ static DuxHTMLCommentElement *commentElement;
   }
   
   // should never reach this, but add this line anyway to make the compiler happy
-  return string.string.length - startingAt;
+  return string.length - startingAt;
 }
 
 @end

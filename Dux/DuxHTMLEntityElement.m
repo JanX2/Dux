@@ -32,14 +32,14 @@ static NSColor *entityColor;
   return [self initWithLanguage:[DuxHTMLLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   // scan up to the next character
-  NSRange foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, string.string.length - startingAt)];
+  NSRange foundRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, string.length - startingAt)];
   
   // scanned up to the end of the string?
   if (foundRange.location == NSNotFound)
-    return string.string.length - startingAt;
+    return string.length - startingAt;
   
   // found ';' character
   return (foundRange.location + 1) - startingAt;

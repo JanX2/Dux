@@ -34,27 +34,27 @@ static NSColor *attributeColor;
   return [self initWithLanguage:[DuxXMLLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   // find next character
-  NSRange foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, string.string.length - startingAt)];
+  NSRange foundRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, string.length - startingAt)];
   
   // not found, or the last character in the string?
-  if (foundRange.location == NSNotFound || foundRange.location == (string.string.length - 1))
-    return string.string.length - startingAt;
+  if (foundRange.location == NSNotFound || foundRange.location == (string.length - 1))
+    return string.length - startingAt;
   
   // because the start/end characters are the same, so we need to make sure we didn't just find the first character
   if (foundRange.location == startingAt) {
-    foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt + 1, string.string.length - (startingAt + 1))];
+    foundRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt + 1, string.length - (startingAt + 1))];
   }
   
   // not found, or the last character in the string?
-  if (foundRange.location == NSNotFound || foundRange.location == (string.string.length - 1))
-    return string.string.length - startingAt;
+  if (foundRange.location == NSNotFound || foundRange.location == (string.length - 1))
+    return string.length - startingAt;
   
   
   // what's next?
-  unichar characterFound = [string.string characterAtIndex:foundRange.location];
+  unichar characterFound = [string characterAtIndex:foundRange.location];
   switch (characterFound) {
     case '"':
       return (foundRange.location + 1) - startingAt;
@@ -65,7 +65,7 @@ static NSColor *attributeColor;
 
   
   // should never reach this, but add this line anyway to make the compiler happy
-  return string.string.length - startingAt;
+  return string.length - startingAt;
 }
 
 - (NSColor *)color

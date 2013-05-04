@@ -37,13 +37,13 @@ static NSColor *color;
   return [self initWithLanguage:[DuxPHPLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
-  NSUInteger stringLength = string.string.length;
+  NSUInteger stringLength = string.length;
   NSRange foundRange = NSMakeRange(NSNotFound, 0);
   
-  if (startingAt + 2 < stringLength && [string.string characterAtIndex:startingAt + 1] == 'x') {
-    foundRange = [string.string rangeOfCharacterFromSet:nonHexCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt + 2, stringLength - startingAt - 2)];
+  if (startingAt + 2 < stringLength && [string characterAtIndex:startingAt + 1] == 'x') {
+    foundRange = [string rangeOfCharacterFromSet:nonHexCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt + 2, stringLength - startingAt - 2)];
     
     if (foundRange.location == NSNotFound)
       return stringLength - startingAt;
@@ -53,7 +53,7 @@ static NSColor *color;
   }
   
   if (foundRange.location == NSNotFound) {
-    foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, stringLength - startingAt)];
+    foundRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, stringLength - startingAt)];
   }
   
   if (foundRange.location == NSNotFound) {

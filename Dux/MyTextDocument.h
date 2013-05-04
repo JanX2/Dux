@@ -10,7 +10,6 @@
 
 #import <Cocoa/Cocoa.h>
 #import "DuxTextView.h"
-#import "DuxSyntaxHighlighter.h"
 #import "DuxLanguageMenuItem.h"
 #import "DuxFileContentsWatcher.h"
 
@@ -23,7 +22,6 @@
 
 @property (nonatomic, strong) NSTextStorage *textStorage;
 @property (nonatomic, strong) DuxTextView *textView;
-@property (nonatomic, strong) DuxSyntaxHighlighter *syntaxtHighlighter;
 @property NSStringEncoding stringEncoding;
 @property (nonatomic, strong) DuxFileContentsWatcher *fileContentsWatcher;
 

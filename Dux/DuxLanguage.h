@@ -10,6 +10,7 @@
 
 #import <Foundation/Foundation.h>
 #import "DuxLanguageElement.h"
+#import "DuxTextStorage.h"
 
 @interface DuxLanguage : NSObject
 
@@ -23,7 +24,7 @@
 - (void)wrapCommentsAroundRange:(NSRange)commentRange ofTextView:(NSTextView *)textView;
 - (void)removeCommentsAroundRange:(NSRange)commentRange ofTextView:(NSTextView *)textView;
 
-- (void)prepareToParseTextStorage:(NSTextStorage *)textStorage;
+- (void)prepareToParseTextStorage:(DuxTextStorage *)textStorage;
 
 // subclasses must override this to check if they are the correct editor. URL will be nil for unsaved documents, but textContents will always be set
 + (BOOL)isDefaultLanguageForURL:(NSURL *)URL textContents:(NSString *)textContents;

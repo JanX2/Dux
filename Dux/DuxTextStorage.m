@@ -8,6 +8,8 @@
 
 #import "DuxTextStorage.h"
 #import "DuxLine.h"
+#import "DuxLanguage.h"
+#import "DuxPlainTextLanguage.h"
 
 static NSCharacterSet *newlineCharacters;
 
@@ -29,7 +31,18 @@ static NSCharacterSet *newlineCharacters;
   contents = [[NSMutableString alloc] init];
   lineNumbers = [NSPointerArray strongObjectsPointerArray];
   
-  [self findLineNumbers];
+  NSMutableParagraphStyle *paragraphStyle = [NSParagraphStyle defaultParagraphStyle].mutableCopy;
+  paragraphStyle.tabStops = @[];
+  paragraphStyle.alignment = NSLeftTextAlignment;
+  paragraphStyle.baseWritingDirection = NSWritingDirectionLeftToRight;
+  paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
+  paragraphStyle.defaultTabInterval = 14;
+  paragraphStyle.headIndent = 28;
+  textAttributes = @{NSFontAttributeName: [NSFont fontWithName:@"Source Code Pro" size:12], NSParagraphStyleAttributeName:paragraphStyle.copy, NSForegroundColorAttributeName: (id)[[NSColor blackColor] CGColor]};
+  
+  language = [DuxPlainTextLanguage sharedInstance];
+  
+  [self findLines];
   
   return self;
 }
@@ -39,27 +52,51 @@ static NSCharacterSet *newlineCharacters;
   return contents;
 }
 
+- (NSUInteger)length
+{
+  return contents.length;
+}
+
 - (void)setString:(NSString *)string
 {
   contents = string.mutableCopy;
-  [self findLineNumbers];
+  [self findLines];
 }
 
-- (void)findLineNumbers
+- (DuxLanguage *)language
 {
-  // find line numbers
+  return language;
+}
+
+- (void)setLanguage:(DuxLanguage *)newLanguage
+{
+  if (language == newLanguage)
+    return;
+  
+  language = newLanguage;
+}
+
+- (NSDictionary *)textAttributes
+{
+  return textAttributes;
+}
+
+- (void)findLines
+{
   NSUInteger index = 0;
   NSUInteger lineStart = 0;
   NSUInteger lineEnd = 0;
   DuxLine *line;
-  while (index <= 99999) {
+  NSMutableArray *elementStack = @[language.baseElement].mutableCopy;
+  [language prepareToParseTextStorage:self];
+  while (true) {
     index++;
     
     lineEnd = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch range:NSMakeRange(lineStart, contents.length - lineStart)].location;
     if (lineEnd == NSNotFound)
-      lineEnd = contents.length - 1;
+      lineEnd = contents.length == 0 ? 0 : contents.length - 1;
     
-    line = [[DuxLine alloc] initWithStorage:self range:NSMakeRange(lineStart, lineEnd - lineStart) lineNumber:[NSString stringWithFormat:@"%lu", (unsigned long)index]];
+    line = [[DuxLine alloc] initWithStorage:self range:NSMakeRange(lineStart, lineEnd - lineStart) lineNumber:[NSString stringWithFormat:@"%lu", (unsigned long)index] workingElementStack:elementStack];
     
     [lineNumbers setCount:lineStart + 1];
     [lineNumbers insertPointer:(void *)line atIndex:lineStart];

@@ -30,15 +30,15 @@ static NSColor *color;
   return [self initWithLanguage:[DuxCSSLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   // find next character
   NSUInteger searchStart = startingAt + 1;
-  NSRange foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStart, string.string.length - searchStart)];
+  NSRange foundRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStart, string.length - searchStart)];
   
   // not found, or the last character in the string?
-  if (foundRange.location == NSNotFound || foundRange.location == (string.string.length - 1))
-    return string.string.length - startingAt;
+  if (foundRange.location == NSNotFound || foundRange.location == (string.length - 1))
+    return string.length - startingAt;
   
   return foundRange.location - startingAt;
 }

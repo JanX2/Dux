@@ -9,6 +9,7 @@
 #import "DuxLine.h"
 #import "DuxTextStorage.h"
 #import "DuxPreferences.h"
+#import "DuxLanguageElement.h"
 
 #define DUX_LINE_NUMBER_WIDTH 40
 static NSDictionary *lineNumberAttributes;
@@ -18,6 +19,8 @@ static NSDictionary *lineNumberAttributes;
 @property (weak) DuxTextStorage *storage;
 @property NSRange range;
 @property NSString *lineNumber;
+
+@property NSArray *elements;
 
 @end
 
@@ -36,12 +39,12 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     [paragraphStyle setLineBreakMode:NSLineBreakByTruncatingMiddle];
     if ([DuxPreferences editorDarkMode]) {
       lineNumberAttributes = [[NSDictionary alloc] initWithObjectsAndKeys:[NSFont fontWithName:@"Source Code Pro ExtraLight" size:10], NSFontAttributeName,
-                          [NSColor colorWithCalibratedWhite:1 alpha:0.8], NSForegroundColorAttributeName,
+                          [NSColor colorWithCalibratedWhite:1 alpha:0.8].CGColor, NSForegroundColorAttributeName,
                           paragraphStyle, NSParagraphStyleAttributeName,
                           nil];
     } else {
       lineNumberAttributes = [[NSDictionary alloc] initWithObjectsAndKeys:[NSFont fontWithName:@"Source Code Pro Light" size:10], NSFontAttributeName,
-                          [NSColor colorWithCalibratedWhite:0 alpha:1], NSForegroundColorAttributeName,
+                          [NSColor colorWithCalibratedWhite:0 alpha:1].CGColor, NSForegroundColorAttributeName,
                           paragraphStyle, NSParagraphStyleAttributeName,
                           nil];
     }
@@ -49,7 +52,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   });
 }
 
-- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSString *)lineNumber
+- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSString *)lineNumber workingElementStack:(NSMutableArray *)elementStack
 {
   if (!(self = [super init]))
     return nil;
@@ -59,15 +62,67 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   self.lineNumber = lineNumber;
   self.drawsAsynchronously = NO;
   
+  
   self.contentsGravity = kCAGravityTopLeft;
   self.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;
+  
+  
+  NSUInteger elementStart = range.location;
+  DuxLanguageElement *element = elementStack.lastObject;
+  DuxLanguageElement *nextElement = nil;
+  BOOL didJustPop = NO;
+  NSUInteger maxRange = NSMaxRange(range);
+  
+  NSMutableArray *mutableElements = [[NSMutableArray alloc] init];
+  while (true) {
+    nextElement = nil;
+    NSUInteger elementLength = [element lengthInString:storage.string startingAt:elementStart didJustPop:didJustPop nextElement:&nextElement];
+    
+    BOOL isLongerThanLine = ((elementStart + elementLength) > maxRange);
+    if (isLongerThanLine)
+      elementLength = maxRange - elementStart;
+    
+    if (elementLength == 0 && nextElement == element) {
+      // endless loop?
+      break;
+    }
+    
+    if (element && elementLength > 0) {
+      [mutableElements addObject:@{@"element": element, @"start": [NSNumber numberWithUnsignedInteger:elementStart - range.location], @"length": [NSNumber numberWithUnsignedInteger:elementLength]}];
+    }
+    
+    if (isLongerThanLine)
+      break;
+    
+    if (nextElement) {
+      [elementStack addObject:nextElement];
+      
+      element = nextElement;
+      didJustPop = NO;
+    } else {
+      [elementStack removeLastObject];
+      
+      element = elementStack.lastObject;
+      didJustPop = YES;
+    }
+
+    elementStart = elementStart + elementLength;
+    if (elementStart >= maxRange)
+      break;
+  }
+  self.elements = mutableElements.copy;
   
   return self;
 }
 
-- (CGFloat)heightWithWidth:(CGFloat)width attributes:(NSDictionary *)textAttributes
+- (CGFloat)heightWithWidth:(CGFloat)width
 {
-  NSAttributedString *stringToDraw = [[NSAttributedString alloc] initWithString:[self.storage.string substringWithRange:self.range] attributes:textAttributes];
+  NSAttributedString *stringToDraw;
+  if (self.range.length > 0) {
+    stringToDraw = [[NSAttributedString alloc] initWithString:[self.storage.string substringWithRange:self.range] attributes:self.storage.textAttributes];
+  } else {
+    stringToDraw = [[NSAttributedString alloc] initWithString:@" " attributes:self.storage.textAttributes];
+  }
   
   CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
   CGSize lineSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(width - DUX_LINE_NUMBER_WIDTH, CGFLOAT_MAX), NULL);
@@ -77,19 +132,10 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
 
 - (void)drawInContext:(CGContextRef)context
 {
-  NSMutableParagraphStyle *paragraphStyle = [NSParagraphStyle defaultParagraphStyle].mutableCopy;
-  paragraphStyle.tabStops = @[];
-  paragraphStyle.alignment = NSLeftTextAlignment;
-  paragraphStyle.baseWritingDirection = NSWritingDirectionLeftToRight;
-  paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
-  paragraphStyle.defaultTabInterval = 14;
-  paragraphStyle.headIndent = 28;
-  NSDictionary *textAttributes = @{NSFontAttributeName: [NSFont fontWithName:@"Source Code Pro" size:12], NSParagraphStyleAttributeName:paragraphStyle.copy};
-  
-  [self drawInContext:context atYOffset:0 width:self.frame.size.width attributes:textAttributes.mutableCopy];
+  [self drawInContext:context atYOffset:0 width:self.frame.size.width];
 }
 
-- (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth attributes:(NSMutableDictionary *)attributes
+- (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth
 {
   CGColorRef bgColor = [NSColor whiteColor].CGColor;
   CGContextSetFillColorWithColor(context, bgColor);
@@ -98,6 +144,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   // calculate head indent
   NSUInteger whitespaceEnd = [self.storage.string rangeOfCharacterFromSet:nonWhitespaceCharacterSet options:NSLiteralSearch range:self.range].location;
   CGFloat headIndent = 28; // default
+  NSMutableDictionary *attributes = self.storage.textAttributes.mutableCopy;
   NSParagraphStyle *paragraphStyle = [attributes objectForKey:NSParagraphStyleAttributeName];
   if (whitespaceEnd != NSNotFound && whitespaceEnd != self.range.location) {
     headIndent += [[self.storage.string substringWithRange:NSMakeRange(self.range.location, whitespaceEnd - self.range.location)] sizeWithAttributes:attributes].width;
@@ -113,11 +160,19 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   }
   
   // load attributed string
-  NSAttributedString *stringToDraw;
+  NSMutableAttributedString *stringToDraw;
   if (self.range.length > 0) {
-    stringToDraw = [[NSAttributedString alloc] initWithString:[self.storage.string substringWithRange:self.range] attributes:attributes];
+    stringToDraw = [[NSMutableAttributedString alloc] initWithString:[self.storage.string substringWithRange:self.range] attributes:attributes];
   } else {
-    stringToDraw = [[NSAttributedString alloc] initWithString:@" " attributes:attributes]; // empty line has zero height, so we force a space
+    stringToDraw = [[NSMutableAttributedString alloc] initWithString:@" " attributes:attributes]; // empty line has zero height, so we force a space
+  }
+  
+  // apply syntax colors
+  
+//  [stringToDraw addAttribute:NSBackgroundColorAttributeName value:[NSColor redColor] range:NSMakeRange(0, stringToDraw.length)];
+  for (NSDictionary *elementRecord in self.elements) {
+//    NSLog(@"%@ %@ %@", [[elementRecord valueForKey:@"element"] color], [elementRecord valueForKey:@"start"], [elementRecord valueForKey:@"length"]);
+    [stringToDraw addAttribute:NSForegroundColorAttributeName value:(id)[[elementRecord valueForKey:@"element"] color].CGColor range:NSMakeRange([[elementRecord valueForKey:@"start"] unsignedIntegerValue], [[elementRecord valueForKey:@"length"] unsignedIntegerValue])];
   }
   
   //Create Frame
@@ -134,8 +189,8 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   
   // draw line number
   if (self.lineNumber) {
-    stringToDraw = [[NSAttributedString alloc] initWithString:self.lineNumber attributes:lineNumberAttributes]; // empty line has zero height, so we force a space
-    framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
+    NSAttributedString *lineNumberString = [[NSAttributedString alloc] initWithString:self.lineNumber attributes:lineNumberAttributes]; // empty line has zero height, so we force a space
+    framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)lineNumberString);
     
     lineRect.origin.x = 0;
     lineRect.origin.y -= 2;

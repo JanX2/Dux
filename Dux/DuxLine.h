@@ -12,13 +12,13 @@
 
 @interface DuxLine : CALayer
 
-- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSString *)lineNumber;
+- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSString *)lineNumber workingElementStack:(NSMutableArray *)elementStack;
 
 @property (readonly, weak) DuxTextStorage *storage;
 @property (readonly) NSRange range;
 
-- (CGFloat)heightWithWidth:(CGFloat)width attributes:(NSDictionary *)textAttributes;
+- (CGFloat)heightWithWidth:(CGFloat)width;
 
-- (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth attributes:(NSMutableDictionary *)attributes;
+- (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth;
 
 @end

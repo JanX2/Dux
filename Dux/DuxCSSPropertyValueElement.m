@@ -37,7 +37,7 @@ static DuxCSSColorValueElement *colorValueElement;
   return [self initWithLanguage:[DuxCSSLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   // scan up to the next character
   BOOL keepLooking = YES;
@@ -45,15 +45,15 @@ static DuxCSSColorValueElement *colorValueElement;
   NSRange foundCharacterSetRange;
   unichar characterFound;
   while (keepLooking) {
-    foundCharacterSetRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.string.length - searchStartLocation)];
+    foundCharacterSetRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.length - searchStartLocation)];
     
     if (foundCharacterSetRange.location == NSNotFound)
       break;
     
     // did we find a / character? check if it's a comment or not
-    characterFound = [string.string characterAtIndex:foundCharacterSetRange.location];
-    if (string.string.length > (foundCharacterSetRange.location + 1) && characterFound == '/') {
-      characterFound = [string.string characterAtIndex:foundCharacterSetRange.location + 1];
+    characterFound = [string characterAtIndex:foundCharacterSetRange.location];
+    if (string.length > (foundCharacterSetRange.location + 1) && characterFound == '/') {
+      characterFound = [string characterAtIndex:foundCharacterSetRange.location + 1];
       if (characterFound != '/' && characterFound != '*') {
         searchStartLocation++;
         continue;
@@ -61,8 +61,8 @@ static DuxCSSColorValueElement *colorValueElement;
     }
     
     // did we find a - character? check if it's followed by a digit
-    if (string.string.length > (foundCharacterSetRange.location + 1) && characterFound == '-') {
-      characterFound = [string.string characterAtIndex:foundCharacterSetRange.location + 1];
+    if (string.length > (foundCharacterSetRange.location + 1) && characterFound == '-') {
+      characterFound = [string characterAtIndex:foundCharacterSetRange.location + 1];
       if (![numericCharacterSet characterIsMember:characterFound]) {
         searchStartLocation++;
         continue;
@@ -73,7 +73,7 @@ static DuxCSSColorValueElement *colorValueElement;
   }  
   // scanned up to the end of the string?
   if (foundCharacterSetRange.location == NSNotFound)
-    return string.string.length - startingAt;
+    return string.length - startingAt;
   
   // what character did we find?
   switch (characterFound) {
@@ -103,7 +103,7 @@ static DuxCSSColorValueElement *colorValueElement;
   }
   
   // should never reach this, but add this line anyway to make the compiler happy
-  return string.string.length - startingAt;
+  return string.length - startingAt;
 }
 
 @end

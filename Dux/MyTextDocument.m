@@ -11,6 +11,7 @@
 #import "MyTextDocument.h"
 #import "DuxPreferences.h"
 #import "DuxProjectWindowController.h"
+#import "DuxLanguage.h"
 
 @implementation MyTextDocument
 
@@ -25,8 +26,6 @@
     if (self) {
       self.stringEncoding = NSUTF8StringEncoding;
       textContentStorage = [[NSTextStorage alloc] initWithString:@"" attributes:@{NSFontAttributeName:[DuxPreferences editorFont]}];
-      self.syntaxtHighlighter = [[DuxSyntaxHighlighter alloc] init];
-      textContentStorage.delegate = self.syntaxtHighlighter;
       
       NSLayoutManager *layoutManager = [[NSLayoutManager alloc] init];
       NSTextContainer *textContainer = [[NSTextContainer alloc] initWithContainerSize:NSMakeSize(100, FLT_MAX)];
@@ -50,7 +49,6 @@ if ([DuxPreferences editorDarkMode]) {
 }
       
       // load text into view
-      self.textView.highlighter = self.syntaxtHighlighter;
       self.activeNewlineStyle = DuxNewlineUnix;
     }
     return self;
@@ -161,18 +159,17 @@ if ([DuxPreferences editorDarkMode]) {
   }
   self.stringEncoding = encoding;
   
-  self.textView.string = textContentToLoad;
-//  [textContentStorage replaceCharactersInRange:NSMakeRange(0, textContentStorage.length) withAttributedString:[[NSAttributedString alloc] initWithString:textContentToLoad attributes:@{NSFontAttributeName:[DuxPreferences editorFont]}]];
-  
-  
   // figure out what language to use
   for (Class language in [DuxLanguage registeredLanguages]) {
     if (![language isDefaultLanguageForURL:self.fileURL textContents:textContentToLoad])
       continue;
     
-    [self.syntaxtHighlighter setBaseLanguage:[language sharedInstance] forTextStorage:textContentStorage];
+    self.textView.storage.language = [language sharedInstance];
     break;
   }
+  
+  self.textView.string = textContentToLoad;
+  //  [textContentStorage replaceCharactersInRange:NSMakeRange(0, textContentStorage.length) withAttributedString:[[NSAttributedString alloc] initWithString:textContentToLoad attributes:@{NSFontAttributeName:[DuxPreferences editorFont]}]];
   
   // set activeNewlineStyle to the first newline in the document
   self.activeNewlineStyle = [textContentToLoad newlineStyleForFirstNewline];
@@ -226,7 +223,7 @@ if ([DuxPreferences editorDarkMode]) {
   if ([[NSApp keyWindow].windowController document] != self)
     return;
   
-  NSString *languageClassName = NSStringFromClass([self.syntaxtHighlighter.baseLanguage class]);
+  NSString *languageClassName = NSStringFromClass([self.textView.storage.language class]);
   
   NSArray *editorMenuIems = [[[[[NSApplication sharedApplication] mainMenu] itemWithTitle:@"Editor"] submenu] itemArray];
   for (NSMenuItem *menuItem in editorMenuIems) {
@@ -241,7 +238,7 @@ if ([DuxPreferences editorDarkMode]) {
 {
   Class languageClass = NSClassFromString([sender valueForKey:@"duxLanguageClassName"]);
   
-  [self.syntaxtHighlighter setBaseLanguage:[languageClass sharedInstance] forTextStorage:textContentStorage];
+  self.textView.storage.language = [languageClass sharedInstance];
   
   [self updateSyntaxMenuStates];
 }

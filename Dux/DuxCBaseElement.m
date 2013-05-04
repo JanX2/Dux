@@ -47,7 +47,7 @@ static DuxCBlockCommentElement *blockCommentElement;
   return [self initWithLanguage:[DuxCLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   // scan up to the next character
   BOOL keepLooking = YES;
@@ -55,15 +55,15 @@ static DuxCBlockCommentElement *blockCommentElement;
   NSRange foundCharacterSetRange;
   unichar characterFound;
   while (keepLooking) {
-    foundCharacterSetRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.string.length - searchStartLocation)];
+    foundCharacterSetRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.length - searchStartLocation)];
     
     if (foundCharacterSetRange.location == NSNotFound)
       break;
     
     // did we find a / character? check if it's a comment or not
-    characterFound = [string.string characterAtIndex:foundCharacterSetRange.location];
-    if (string.string.length > (foundCharacterSetRange.location + 1) && characterFound == '/') {
-      characterFound = [string.string characterAtIndex:foundCharacterSetRange.location + 1];
+    characterFound = [string characterAtIndex:foundCharacterSetRange.location];
+    if (string.length > (foundCharacterSetRange.location + 1) && characterFound == '/') {
+      characterFound = [string characterAtIndex:foundCharacterSetRange.location + 1];
       if (characterFound != '/' && characterFound != '*') {
         searchStartLocation++;
         continue;
@@ -78,7 +78,7 @@ static DuxCBlockCommentElement *blockCommentElement;
 
   NSIndexSet *keywordIndexes = [DuxCLanguage keywordIndexSet];
   if (keywordIndexes) {
-    NSUInteger foundKeywordMax = (foundCharacterSetRange.location == NSNotFound) ? string.string.length : foundCharacterSetRange.location;
+    NSUInteger foundKeywordMax = (foundCharacterSetRange.location == NSNotFound) ? string.length : foundCharacterSetRange.location;
     for (NSUInteger index = startingAt; index < foundKeywordMax; index++) {
       if ([keywordIndexes containsIndex:index]) {
         if (foundKeywordRange.location == NSNotFound) {
@@ -97,7 +97,7 @@ static DuxCBlockCommentElement *blockCommentElement;
   
   // scanned up to the end of the string?
   if (foundCharacterSetRange.location == NSNotFound && foundKeywordRange.location == NSNotFound)
-    return string.string.length - startingAt;
+    return string.length - startingAt;
   
   // did we find a keyword before a character?
   if (foundKeywordRange.location != NSNotFound) {
@@ -136,7 +136,7 @@ static DuxCBlockCommentElement *blockCommentElement;
   }
   
   // should never reach this, but add this line anyway to make the compiler happy
-  return string.string.length - startingAt;
+  return string.length - startingAt;
 }
 
 @end

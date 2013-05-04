@@ -41,9 +41,9 @@ static DuxJSONKeywordElement *keywordElement;
   return [self initWithLanguage:[DuxJSONLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
-  NSRange foundCharacterSetRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, string.length - startingAt)];
+  NSRange foundCharacterSetRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(startingAt, string.length - startingAt)];
   
   NSRange foundKeywordRange = NSMakeRange(NSNotFound, 0);
   NSIndexSet *keywordIndexes = [DuxJSONLanguage keywordIndexSet];
@@ -76,7 +76,7 @@ static DuxJSONKeywordElement *keywordElement;
     }
   }
   
-  unichar characterFound = [string.string characterAtIndex:foundCharacterSetRange.location];
+  unichar characterFound = [string characterAtIndex:foundCharacterSetRange.location];
   
   BOOL isKeyStart = NO;
   if (characterFound == '"') {
@@ -85,12 +85,12 @@ static DuxJSONKeywordElement *keywordElement;
     BOOL keepLooking = YES;
     
     while (keepLooking) {
-      foundQuoteRange = [string.string rangeOfCharacterFromSet:keyElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.length - searchStartLocation)];
+      foundQuoteRange = [string rangeOfCharacterFromSet:keyElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.length - searchStartLocation)];
       
       if (foundQuoteRange.location == NSNotFound || foundQuoteRange.location == (string.length - 1))
         return string.length - startingAt;
       
-      characterFound = [string.string characterAtIndex:foundQuoteRange.location];
+      characterFound = [string characterAtIndex:foundQuoteRange.location];
       if (characterFound == '\\') {
         searchStartLocation = foundQuoteRange.location + 2;
         continue;
@@ -99,7 +99,7 @@ static DuxJSONKeywordElement *keywordElement;
       NSUInteger location = foundQuoteRange.location + 1;
       unichar character;
       while (location < string.length) {
-        character = [string.string characterAtIndex:location];
+        character = [string characterAtIndex:location];
         location++;
         
         if (isspace(character))

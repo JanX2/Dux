@@ -47,7 +47,7 @@ static DuxRubyRegularExpressionElement *regularExpressionElement;
   return [self initWithLanguage:[DuxRubyLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   // scan up to the next character
   BOOL keepLooking = YES;
@@ -55,12 +55,12 @@ static DuxRubyRegularExpressionElement *regularExpressionElement;
   NSRange foundCharacterSetRange;
   unichar characterFound;
   while (keepLooking) {
-    foundCharacterSetRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.string.length - searchStartLocation)];
+    foundCharacterSetRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.length - searchStartLocation)];
     
     if (foundCharacterSetRange.location == NSNotFound)
       break;
     
-    characterFound = [string.string characterAtIndex:foundCharacterSetRange.location];
+    characterFound = [string characterAtIndex:foundCharacterSetRange.location];
     
     keepLooking = NO;
   }
@@ -70,7 +70,7 @@ static DuxRubyRegularExpressionElement *regularExpressionElement;
 
   NSIndexSet *keywordIndexes = [DuxRubyLanguage keywordIndexSet];
   if (keywordIndexes) {
-    NSUInteger foundKeywordMax = (foundCharacterSetRange.location == NSNotFound) ? string.string.length : foundCharacterSetRange.location;
+    NSUInteger foundKeywordMax = (foundCharacterSetRange.location == NSNotFound) ? string.length : foundCharacterSetRange.location;
     for (NSUInteger index = startingAt; index < foundKeywordMax; index++) {
       if ([keywordIndexes containsIndex:index]) {
         if (foundKeywordRange.location == NSNotFound) {
@@ -89,7 +89,7 @@ static DuxRubyRegularExpressionElement *regularExpressionElement;
   
   // scanned up to the end of the string?
   if (foundCharacterSetRange.location == NSNotFound && foundKeywordRange.location == NSNotFound)
-    return string.string.length - startingAt;
+    return string.length - startingAt;
   
   // did we find a keyword before a character?
   if (foundKeywordRange.location != NSNotFound) {
@@ -128,7 +128,7 @@ static DuxRubyRegularExpressionElement *regularExpressionElement;
   }
   
   // should never reach this, but add this line anyway to make the compiler happy
-  return string.string.length - startingAt;
+  return string.length - startingAt;
 }
 
 @end

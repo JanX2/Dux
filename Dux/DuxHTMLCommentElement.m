@@ -30,20 +30,20 @@ static NSColor *entityColor;
   return [self initWithLanguage:[DuxHTMLLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   // scan up to the next character
   NSUInteger stringLength = string.length;
   NSUInteger searchPosition = startingAt;
   NSRange foundRange;
   while (searchPosition < stringLength) {
-    foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchPosition, string.string.length - searchPosition)];
+    foundRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchPosition, string.length - searchPosition)];
     
     if (foundRange.location == NSNotFound)
       break;
     
     if (stringLength > foundRange.location + 2) {
-      if ([[string.string substringWithRange:NSMakeRange(foundRange.location, 3)] isEqualToString:@"-->"]) {
+      if ([[string substringWithRange:NSMakeRange(foundRange.location, 3)] isEqualToString:@"-->"]) {
         foundRange.location += 3;
         break;
       }
@@ -55,7 +55,7 @@ static NSColor *entityColor;
   
   // scanned up to the end of the string?
   if (foundRange.location == NSNotFound)
-    return string.string.length - startingAt;
+    return string.length - startingAt;
   
   // found end of comment character
   return foundRange.location - startingAt;

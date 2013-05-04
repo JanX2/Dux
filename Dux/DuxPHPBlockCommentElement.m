@@ -30,13 +30,13 @@ static NSColor *color;
   return [self initWithLanguage:[DuxPHPLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   NSUInteger searchStartLocation = startingAt + 2;
-  NSRange foundRange = [string.string rangeOfString:nextElementSearchString options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.string.length - searchStartLocation)];
+  NSRange foundRange = [string rangeOfString:nextElementSearchString options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.length - searchStartLocation)];
   
   if (foundRange.location == NSNotFound)
-    return string.string.length - startingAt;
+    return string.length - startingAt;
   
   return (foundRange.location - startingAt + 2);
 }

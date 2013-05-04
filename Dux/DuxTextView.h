@@ -10,7 +10,6 @@
 
 #import <AppKit/AppKit.h>
 #import "NSStringDuxAdditions.h"
-#import "DuxSyntaxHighlighter.h"
 #import "DuxTextStorage.h"
 
 @class MyTextDocument;
@@ -24,7 +23,6 @@
 }
 
 @property (weak) MyTextDocument *textDocument;
-@property (weak) DuxSyntaxHighlighter *highlighter;
 @property (strong) NSSet *highlightedElements;
 @property BOOL showLineNumbers;
 @property BOOL showPageGuide;
@@ -34,8 +32,6 @@
 @property NSArray *selectedRanges;
 @property DuxTextStorage *storage;
 @property NSString *string;
-
-@property NSDictionary *textAttributes;
 
 @property CGFloat scrollPosition; // character offeset of the first visible line, as a float so we can be part way through a character (we actually scroll in pixels as a CGFloat, not in characters)
 

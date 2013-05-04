@@ -30,22 +30,22 @@ static NSColor *color;
   return [self initWithLanguage:[DuxCSSLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   // find next character
   NSUInteger searchStart = startingAt + 1;
   NSUInteger stringLength = string.length;
-  NSRange foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStart, stringLength - searchStart)];
+  NSRange foundRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStart, stringLength - searchStart)];
   
   // not found, or the last character in the string?
   if (foundRange.location == NSNotFound || foundRange.location == (stringLength - 1))
     return stringLength - startingAt;
   
   // did we just find a known measurment unit (px, pt, %, etc)
-  if (stringLength > foundRange.location + 1 && [[string.string substringWithRange:NSMakeRange(foundRange.location, 1)] isEqualToString:@"%"]) {
+  if (stringLength > foundRange.location + 1 && [[string substringWithRange:NSMakeRange(foundRange.location, 1)] isEqualToString:@"%"]) {
     foundRange.location += 1;
   } else if (stringLength > foundRange.location + 2) {
-    NSString *unit = [string.string substringWithRange:NSMakeRange(foundRange.location, 2)];
+    NSString *unit = [string substringWithRange:NSMakeRange(foundRange.location, 2)];
     
     if ([unit isEqualToString:@"px"]) {
       foundRange.location += 2;

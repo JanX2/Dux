@@ -8,15 +8,20 @@
 
 #import <Foundation/Foundation.h>
 
-@class DuxLine;
+@class DuxLine, DuxLanguage;
 
 @interface DuxTextStorage : NSObject
 {
   NSMutableString *contents;
   NSPointerArray *lineNumbers;
+  NSDictionary *textAttributes;
+  DuxLanguage *language;
 }
 
 @property NSString *string;
+@property (readonly) NSUInteger length;
+@property DuxLanguage *language;
+@property (readonly) NSDictionary *textAttributes;
 
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string;
 

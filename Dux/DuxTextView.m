@@ -19,15 +19,6 @@
 
 @implementation DuxTextView
 
-@synthesize highlighter;
-@synthesize goToLinePanel;
-@synthesize goToLineSearchField;
-@synthesize textDocument;
-@synthesize highlightedElements;
-@synthesize showLineNumbers;
-@synthesize showPageGuide;
-@synthesize pageGuidePosition;
-
 static NSCharacterSet *newlineCharacterSet;
 
 + (void)initialize
@@ -60,15 +51,6 @@ static NSCharacterSet *newlineCharacterSet;
 - (void)initDuxTextView
 {
   self.storage = [[DuxTextStorage alloc] init];
-  
-  NSMutableParagraphStyle *paragraphStyle = [NSParagraphStyle defaultParagraphStyle].mutableCopy;
-  paragraphStyle.tabStops = @[];
-  paragraphStyle.alignment = NSLeftTextAlignment;
-  paragraphStyle.baseWritingDirection = NSWritingDirectionLeftToRight;
-  paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
-  paragraphStyle.defaultTabInterval = 14;
-  paragraphStyle.headIndent = 28;
-  self.textAttributes = @{NSFontAttributeName: [NSFont fontWithName:@"Source Code Pro" size:12], NSParagraphStyleAttributeName:paragraphStyle.copy};
   
   self.scrollPosition = 0;
   
@@ -998,7 +980,6 @@ if ([DuxPreferences editorDarkMode]) {
   BOOL willAnimate = NO;
   
   NSUInteger characterPosition = self.scrollPosition;
-  NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
   CGFloat leftGutter = 4;
   CGFloat rightGutter = 4;
   CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
@@ -1006,7 +987,7 @@ if ([DuxPreferences editorDarkMode]) {
   
   DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
   if (line.range.length > 0) {
-    yOffset += ([line heightWithWidth:lineWidth attributes:workingAttributes] * ((self.scrollPosition - line.range.location) / line.range.length));
+    yOffset += ([line heightWithWidth:lineWidth] * ((self.scrollPosition - line.range.location) / line.range.length));
   }
   yOffset = round(yOffset);
   
@@ -1016,7 +997,7 @@ if ([DuxPreferences editorDarkMode]) {
     if (!line)
       break;
     
-    CGFloat lineHeight = [line heightWithWidth:lineWidth attributes:workingAttributes];
+    CGFloat lineHeight = [line heightWithWidth:lineWidth];
     
     characterPosition = line.range.location + line.range.length + 1;
     

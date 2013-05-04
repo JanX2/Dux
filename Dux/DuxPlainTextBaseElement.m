@@ -18,9 +18,9 @@
   return [self initWithLanguage:[DuxPlainTextLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
-  return string.string.length - startingAt;
+  return string.length - startingAt;
 }
 
 @end

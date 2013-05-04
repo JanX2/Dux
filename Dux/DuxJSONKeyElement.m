@@ -28,7 +28,7 @@ static NSColor *color;
   return [self initWithLanguage:[DuxJSONLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   BOOL keepLooking = YES;
   NSUInteger searchStartLocation = startingAt + 1;
@@ -36,12 +36,12 @@ static NSColor *color;
   unichar characterFound;
   
   while (keepLooking) {
-    foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.length - searchStartLocation)];
+    foundRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.length - searchStartLocation)];
     
     if (foundRange.location == NSNotFound || foundRange.location == (string.length - 1))
       return string.length - startingAt;
     
-    characterFound = [string.string characterAtIndex:foundRange.location];
+    characterFound = [string characterAtIndex:foundRange.location];
     if (characterFound == '\\') {
       searchStartLocation = foundRange.location + 2;
       continue;

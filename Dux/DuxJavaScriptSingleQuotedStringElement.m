@@ -30,7 +30,7 @@ static NSColor *color;
   return [self initWithLanguage:[DuxJavaScriptLanguage sharedInstance]];
 }
 
-- (NSUInteger)lengthInString:(NSAttributedString *)string startingAt:(NSUInteger)startingAt nextElement:(DuxLanguageElement *__strong*)nextElement
+- (NSUInteger)lengthInString:(NSString *)string startingAt:(NSUInteger)startingAt didJustPop:(BOOL)didJustPop nextElement:(DuxLanguageElement *__strong*)nextElement
 {
   BOOL keepLooking = YES;
   NSUInteger searchStartLocation = startingAt;
@@ -38,11 +38,11 @@ static NSColor *color;
   unichar characterFound;
   while (keepLooking) {
     // find next character
-    foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.string.length - searchStartLocation)];
+    foundRange = [string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchStartLocation, string.length - searchStartLocation)];
     
     // not found, or the last character in the string?
-    if (foundRange.location == NSNotFound || foundRange.location == (string.string.length - 1))
-      return string.string.length - startingAt;
+    if (foundRange.location == NSNotFound || foundRange.location == (string.length - 1))
+      return string.length - startingAt;
     
     // because the start/end characters are the same, so we need to make sure we didn't just find the first character
     if (foundRange.location == startingAt) {
@@ -51,7 +51,7 @@ static NSColor *color;
     }
     
     // backslash? keep searching
-    characterFound = [string.string characterAtIndex:foundRange.location];
+    characterFound = [string characterAtIndex:foundRange.location];
     if (characterFound == '\\') {
       searchStartLocation = foundRange.location + 2;
       continue;
@@ -69,7 +69,7 @@ static NSColor *color;
 
   
   // should never reach this, but add this line anyway to make the compiler happy
-  return string.string.length - startingAt;
+  return string.length - startingAt;
 }
 
 - (NSColor *)color

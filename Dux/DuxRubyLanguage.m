@@ -53,7 +53,7 @@ static NSIndexSet *keywordIndexSet = nil;
   return keywordIndexSet;
 }
 
-- (void)prepareToParseTextStorage:(NSTextStorage *)textStorage
+- (void)prepareToParseTextStorage:(DuxTextStorage *)textStorage
 {
   [super prepareToParseTextStorage:textStorage];
   
