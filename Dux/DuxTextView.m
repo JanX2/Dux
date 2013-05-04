@@ -96,9 +96,9 @@ if ([DuxPreferences editorDarkMode]) {
 //  container.widthTracksTextView = NO;
 //  self.horizontallyResizable = YES;
   
-  if (!self.textStorage.delegate)
-    NSLog(@"oops! can't  find syntax highlighter!");
-  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(syntaxHighlighterDidFinishHighlighting:) name:@"DuxSyntaxHighlighterDidFinishHighlighting" object:self.textStorage.delegate];
+//  if (!self.textStorage.delegate)
+//    NSLog(@"oops! can't  find syntax highlighter!");
+//  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(syntaxHighlighterDidFinishHighlighting:) name:@"DuxSyntaxHighlighterDidFinishHighlighting" object:self.textStorage.delegate];
   
   // apply the text view
   
