@@ -25,7 +25,7 @@
 
 - (void)setBaseLanguage:(DuxLanguage *)newBaseLanguage forTextStorage:(NSTextStorage *)textStorage;
 
-- (void)updateHighlightingForStorage:(NSTextStorage *)textStorage;
+- (void)updateHighlightingForStorage:(NSTextStorage *)textStorage range:(NSRange)editedRange;
 
 - (DuxLanguage *)languageForRange:(NSRange)range ofTextStorage:(NSTextStorage *)textStorage;
 - (DuxLanguageElement *)elementForRange:(NSRange)range ofTextStorage:(NSTextStorage *)textStorage;

@@ -61,11 +61,12 @@ if ([DuxPreferences editorDarkMode]) {
 {
   baseLanguage = newBaseLanguage;
   
-  [textStorage setAttributes:[self baseAttributes] range:NSMakeRange(0, textStorage.length)];
-  [self updateHighlightingForStorage:textStorage];
+  NSRange range = NSMakeRange(0, textStorage.length);
+  [textStorage setAttributes:[self baseAttributes] range:range];
+  [self updateHighlightingForStorage:textStorage range:range];
 }
 
-- (void)updateHighlightingForStorage:(NSTextStorage *)textStorage
+- (void)updateHighlightingForStorage:(NSTextStorage *)textStorage range:(NSRange)editedRange
 {
   // we can't do anything with a zero length string, and we'll fail with an exception if we try
   if (textStorage.length == 0)
@@ -76,11 +77,24 @@ if ([DuxPreferences editorDarkMode]) {
     return;
   
   isHighlighting = YES;
-  [textStorage beginEditing];
+  BOOL didBeginEditing = NO;
+  
+  // expand editedRange out to the first newline before and after it's range
+  NSRange minHighlightRange = editedRange;
+  NSUInteger newlinePosition = [textStorage.string rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch | NSBackwardsSearch range:NSMakeRange(0, editedRange.location)].location;
+  if (newlinePosition == NSNotFound)
+    newlinePosition = 0;
+  minHighlightRange.length = minHighlightRange.length + (minHighlightRange.location - newlinePosition);
+  minHighlightRange.location = newlinePosition;
+  
+  newlinePosition = [textStorage.string rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch range:NSMakeRange(editedRange.location + editedRange.length, textStorage.length - (editedRange.location + editedRange.length))].location;
+  if (newlinePosition == NSNotFound)
+    newlinePosition = textStorage.length - 1;
+  minHighlightRange.length = newlinePosition - minHighlightRange.location;
   
   // figure out where we are going to start from and what attributes are already there
   NSRange effectiveRange; // warning: we tell NSAttributedString not to search the entire string to calculate this, so only the location property is valid
-  NSInteger highlightIndex = 0;
+  NSInteger highlightIndex = minHighlightRange.location;
   NSDictionary *startingAtts = [textStorage attributesAtIndex:highlightIndex longestEffectiveRange:&effectiveRange inRange:NSMakeRange(0, 1)];
   
   // grab the element stack
@@ -93,7 +107,12 @@ if ([DuxPreferences editorDarkMode]) {
     NSMutableDictionary *atts = [self.baseAttributes mutableCopy];
     [atts setValue:elementStack forKey:@"DuxLanguageElementStack"];
     
+    
     NSRange attsRange = NSMakeRange(effectiveRange.location, textStorage.length - effectiveRange.location);
+    if (!didBeginEditing) {
+      [textStorage beginEditing];
+      didBeginEditing = YES;
+    }
     [textStorage addAttributes:[atts copy] range:attsRange];
     
     startingAtts = atts;
@@ -153,10 +172,23 @@ if ([DuxPreferences editorDarkMode]) {
     oldAttsRange = NSIntersectionRange(oldAttsRange, attsRange);
     
     // apply new value if there's anything to apply
+    BOOL didApplyChange = NO;
     if (attsRange.length != 0 && !(attsRange.location >= oldAttsRange.location && NSMaxRange(attsRange) <= NSMaxRange(oldAttsRange) && [elementStack isEqual:oldElementStack])) {
+      didApplyChange = YES;
+      
+      if (!didBeginEditing) {
+        [textStorage beginEditing];
+        didBeginEditing = YES;
+      }
       [textStorage addAttribute:NSForegroundColorAttributeName value:[thisElement color] range:attsRange];
       [textStorage addAttribute:@"DuxLanguageElementStack" value:elementStack range:attsRange];
     }
+    
+    // if we are now outside minHighlightRange and haven't edited anything... stop doing stuff now
+    if (!didApplyChange && attsRange.length != 0 && highlightIndex > minHighlightRange.location + minHighlightRange.length) {
+      break;
+    }
+    
     
     // prepare for next element
     highlightIndex = NSMaxRange(attsRange);
@@ -167,16 +199,22 @@ if ([DuxPreferences editorDarkMode]) {
     }
   }
   
-  [textStorage endEditing];
+  if (didBeginEditing)
+    [textStorage endEditing];
   isHighlighting = NO;
   
-  [[NSNotificationCenter defaultCenter] postNotificationName:@"DuxSyntaxHighlighterDidFinishHighlighting" object:self];
+  // on the _next_ pass of the event loop, post the finished highlighting message. This is beacuse there are edge cases where changing the text storage inside -[NSTextStorageDelegateProtocol textStorageDidProcessEditing:] will cause corruption
+  double delayInSeconds = 0.0;
+  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"DuxSyntaxHighlighterDidFinishHighlighting" object:self];
+  });
 }
 
 - (void)textStorageDidProcessEditing:(NSNotification *)notification
 {
   NSTextStorage *storage = notification.object;
-  [self updateHighlightingForStorage:storage];
+  [self updateHighlightingForStorage:storage range:storage.editedRange];
 }
 
 - (DuxLanguage *)languageForRange:(NSRange)range ofTextStorage:(NSTextStorage *)textStorage

@@ -96,6 +96,10 @@ if ([DuxPreferences editorDarkMode]) {
 //  container.widthTracksTextView = NO;
 //  self.horizontallyResizable = YES;
   
+  if (!self.textStorage.delegate)
+    NSLog(@"oops! can't  find syntax highlighter!");
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(syntaxHighlighterDidFinishHighlighting:) name:@"DuxSyntaxHighlighterDidFinishHighlighting" object:self.textStorage.delegate];
+  
   // apply the text view
   
   NSNotificationCenter *notifCenter = [NSNotificationCenter defaultCenter];
@@ -124,20 +128,14 @@ if ([DuxPreferences editorDarkMode]) {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
-- (void)awakeFromNib
-{
-  [super awakeFromNib];
-}
-
 - (void)syntaxHighlighterDidFinishHighlighting:(NSNotification *)notif
 {
-  [self setNeedsDisplay:YES];
-//  if (self.textStorage.length == 0)
-//    return;
-//  
-//  NSUInteger index = (self.selectedRange.location > 0) ? self.selectedRange.location - 1 : 0;
-//  index = MIN(index, self.textStorage.length - 1);
-//  [self setTypingAttributes:[self.textStorage attributesAtIndex:index effectiveRange:NULL]];
+//   if (self.textStorage.length == 0)
+//     return;
+//   
+//   NSUInteger index = (self.selectedRange.location > 0) ? self.selectedRange.location : 0;
+//   index = MIN(index, self.textStorage.length - 1);
+//   [self setTypingAttributes:[self.textStorage attributesAtIndex:index effectiveRange:NULL]];
 }
 
 - (void)insertNewline:(id)sender
@@ -1401,19 +1399,11 @@ if ([DuxPreferences editorDarkMode]) {
 - (void)editorFontDidChange:(NSNotification *)notif
 {
   NSLog(@"not yet implemented");
-//  dispatch_async(dispatch_get_main_queue(), ^{
-//    [self.textStorage setAttributes:[NSDictionary dictionary] range:NSMakeRange(0, self.textStorage.length)];
-//    [self.highlighter updateHighlightingForStorage:self.textStorage];
-//  });
 }
 
 - (void)editorTabWidthDidChange:(NSNotification *)notif
 {
   NSLog(@"not yet implemented");
-//  dispatch_async(dispatch_get_main_queue(), ^{
-//    [self.textStorage setAttributes:[NSDictionary dictionary] range:NSMakeRange(0, self.textStorage.length)];
-//    [self.highlighter updateHighlightingForStorage:self.textStorage];
-//  });
 }
 
 - (void)showLineNumbersDidChange:(NSNotification *)notif
