@@ -1060,11 +1060,10 @@ if ([DuxPreferences editorDarkMode]) {
       [values addObject: @(direction*M_PI/(float)i)];
     }
     [values addObject: @0.0f];
-    CAKeyframeAnimation* anim =
-    [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
+    CAKeyframeAnimation* anim = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
     anim.values = @[@0.0, @1.0, @1.0, @0.0];
-    anim.keyTimes = @[@0.0, @0.2, @0.45, @1.0];
-    anim.duration = 1;
+    anim.keyTimes = @[@0.0, @0.15, @0.6, @1.0];
+    anim.duration = 0.9;
 //    anim.timingFunctions = @[[CAValueFunction functionWithName: kCAMediaTimingFunctionEaseIn], [CAValueFunction functionWithName: kCAMediaTimingFunctionEaseOut], [CAValueFunction functionWithName: kCAMediaTimingFunctionEaseIn]];
     anim.repeatCount = HUGE_VALF;
     [self.insertionPointLayer addAnimation:anim forKey:nil];
