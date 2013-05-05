@@ -61,7 +61,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   self.range = range;
   self.lineNumber = lineNumber;
   self.drawsAsynchronously = NO;
-  
+  self.contentsScale = [NSScreen mainScreen].backingScaleFactor;
   
   self.contentsGravity = kCAGravityTopLeft;
   self.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;

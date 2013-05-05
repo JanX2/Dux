@@ -17,6 +17,12 @@
 #import "DuxBundle.h"
 #import "DuxLine.h"
 
+@interface DuxTextView()
+
+@property CALayer *insertionPointLayer;
+
+@end
+
 @implementation DuxTextView
 
 static NSCharacterSet *newlineCharacterSet;
@@ -56,8 +62,10 @@ static NSCharacterSet *newlineCharacterSet;
   
   self.wantsLayer = YES;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
+  self.layer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
   [self.layer setNeedsDisplay];
 //  self.layer.sublayerTransform = CATransform3DMakeScale(1.0f, -1.0f, 1.0f);
+  
   
 if ([DuxPreferences editorDarkMode]) {
   self.insertionPointColor = [NSColor colorWithCalibratedWhite:1 alpha:1];
@@ -1018,8 +1026,13 @@ if ([DuxPreferences editorDarkMode]) {
   }
   
   for (CALayer *layer in self.layer.sublayers.copy) {
-    if (![lineLayers containsObject:layer])
-      [layer removeFromSuperlayer];
+    if (layer == self.insertionPointLayer)
+      continue;
+    
+    if ([lineLayers containsObject:layer])
+      continue;
+    
+    [layer removeFromSuperlayer];
   }
   
   for (CALayer *layer in lineLayers) {
@@ -1030,7 +1043,107 @@ if ([DuxPreferences editorDarkMode]) {
     [layer setNeedsDisplay];
   }
   
+  if (!self.insertionPointLayer) {
+    self.insertionPointLayer = [[CALayer alloc] init];
+    self.insertionPointLayer.frame = CGRectMake(82, self.frame.size.height - 102, 3, 17);
+    self.insertionPointLayer.delegate = self;
+    self.insertionPointLayer.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;
+    [self.insertionPointLayer setNeedsDisplay];
+    self.insertionPointLayer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
+    self.insertionPointLayer.opacity = 0;
+    [self.layer addSublayer:self.insertionPointLayer];
+    
+    NSMutableArray* values = [NSMutableArray array];
+    [values addObject: @0.0f];
+    int direction = 1;
+    for (int i = 20; i < 60; i += 5, direction *= -1) { // alternate directions
+      [values addObject: @(direction*M_PI/(float)i)];
+    }
+    [values addObject: @0.0f];
+    CAKeyframeAnimation* anim =
+    [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
+    anim.values = @[@0.0, @1.0, @1.0, @0.0];
+    anim.keyTimes = @[@0.0, @0.2, @0.45, @1.0];
+    anim.duration = 1;
+//    anim.timingFunctions = @[[CAValueFunction functionWithName: kCAMediaTimingFunctionEaseIn], [CAValueFunction functionWithName: kCAMediaTimingFunctionEaseOut], [CAValueFunction functionWithName: kCAMediaTimingFunctionEaseIn]];
+    anim.repeatCount = HUGE_VALF;
+    [self.insertionPointLayer addAnimation:anim forKey:nil];
+    
+//    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"opacity"];
+//    [animation setFromValue:[NSNumber numberWithFloat:1.0]];
+//    [animation setToValue:[NSNumber numberWithFloat:0.3]];
+//    [animation setDuration:0.5f];
+//    [animation setTimingFunction:[CAMediaTimingFunction
+//                                  functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
+//    [animation setAutoreverses:YES];
+//    [animation setRepeatCount:20000];
+//    [self.insertionPointLayer addAnimation:animation forKey:@"opacity"];
+  } else {
+    [self.layer addSublayer:self.insertionPointLayer]; // move it to the top
+  }
+  
   [CATransaction commit];
+}
+
+- (void)showInsertionPoint
+{
+//  [CATransaction begin];
+//  [CATransaction setAnimationDuration:0.2];
+//  self.insertionPointLayer.opacity = 1;
+//  [CATransaction commit];
+  
+  CABasicAnimation *flash = [CABasicAnimation animationWithKeyPath:@"opacity"];
+  flash.fromValue = [NSNumber numberWithFloat:0.3];
+  flash.toValue = [NSNumber numberWithFloat:1.0];
+  flash.duration = 0.2;
+  flash.repeatCount = 0;
+  [self.insertionPointLayer addAnimation:flash forKey:@"flash"];
+  
+  
+  double delayInSeconds = 0.3;
+  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+    [self hideInsertionPoint];
+  });
+}
+
+- (void)hideInsertionPoint
+{
+  CABasicAnimation *flash = [CABasicAnimation animationWithKeyPath:@"opacity"];
+  flash.fromValue = [NSNumber numberWithFloat:1];
+  flash.toValue = [NSNumber numberWithFloat:0.3];
+  flash.duration = 0.4;
+  flash.repeatCount = 0;
+  [self.insertionPointLayer addAnimation:flash forKey:@"flash"];
+  
+  double delayInSeconds = 4;
+  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+    [self showInsertionPoint];
+  });
+}
+
+- (void)drawLayer:(CALayer *)layer inContext:(CGContextRef)context
+{
+  if (layer == self.insertionPointLayer) {
+    CGMutablePathRef path = CGPathCreateMutable();
+    CGPathMoveToPoint(path, NULL, -0.3, 0);
+    CGPathAddLineToPoint(path, NULL, layer.frame.size.width + 0.3, 0);
+    CGPathAddLineToPoint(path, NULL, layer.frame.size.width - 1, 1.5);
+    CGPathAddLineToPoint(path, NULL, layer.frame.size.width - 1, layer.frame.size.height - 1.5);
+    CGPathAddLineToPoint(path, NULL, layer.frame.size.width + 0.3, layer.frame.size.height);
+    CGPathAddLineToPoint(path, NULL, -0.3, layer.frame.size.height);
+    CGPathAddLineToPoint(path, NULL, 1, layer.frame.size.height - 1.5);
+    CGPathAddLineToPoint(path, NULL, 1, 1.5);
+    CGPathCloseSubpath(path);
+    
+    CGContextAddPath(context, path);
+    
+    CGContextSetFillColorWithColor(context, CGColorCreateGenericRGB(0.11, 0.36, 0.93, 1.0));
+    CGContextDrawPath(context, kCGPathFill);
+    
+    CGPathRelease(path);
+  }
 }
 
 //- (void)drawRect:(NSRect)dirtyRect

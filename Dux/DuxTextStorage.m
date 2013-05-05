@@ -38,7 +38,7 @@ static NSCharacterSet *newlineCharacters;
   paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
   paragraphStyle.defaultTabInterval = 14;
   paragraphStyle.headIndent = 28;
-  textAttributes = @{NSFontAttributeName: [NSFont fontWithName:@"Source Code Pro" size:12], NSParagraphStyleAttributeName:paragraphStyle.copy, NSForegroundColorAttributeName: (id)[[NSColor blackColor] CGColor]};
+  textAttributes = @{NSFontAttributeName: [NSFont fontWithName:@"Source Code Pro" size:13], NSParagraphStyleAttributeName:paragraphStyle.copy, NSForegroundColorAttributeName: (id)[[NSColor blackColor] CGColor]};
   
   language = [DuxPlainTextLanguage sharedInstance];
   
