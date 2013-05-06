@@ -18,6 +18,7 @@
 @property (readonly) NSRange range;
 
 - (CGFloat)heightWithWidth:(CGFloat)width;
+- (CGPoint)pointForCharacterOffset:(NSUInteger)characterOffset; // relative to entire storage, not just this line range
 
 - (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth;
 

@@ -60,6 +60,8 @@ static NSCharacterSet *newlineCharacterSet;
   
   self.scrollPosition = 0;
   
+  self.insertionPointOffset = 0;
+  
   self.wantsLayer = YES;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
   self.layer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
@@ -578,7 +580,6 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (void)keyDown:(NSEvent *)theEvent
 {
-  NSLog(@"not yet implemented");
 //  // handle tab completion?
 //  if (([[theEvent charactersIgnoringModifiers] characterAtIndex:0] == NSTabCharacter) && self.selectedRange.length == 0 && !([theEvent modifierFlags] & NSShiftKeyMask)) {
 //  
@@ -607,57 +608,59 @@ if ([DuxPreferences editorDarkMode]) {
 //    }
 //  }
 //  
-//  
-//  // handle other key
-//  switch ([[theEvent charactersIgnoringModifiers] characterAtIndex:0]) {
-//    case NSLeftArrowFunctionKey:
-//      if (!([theEvent modifierFlags] & NSControlKeyMask))
-//        break;
-//      
-//      if ([theEvent modifierFlags] & NSShiftKeyMask) {
-//        [self moveSubwordBackwardAndModifySelection:self];
-//      } else {
-//        [self moveSubwordBackward:self];
-//      }
-//      return;
-//    case NSRightArrowFunctionKey:;
-//      if (!([theEvent modifierFlags] & NSControlKeyMask))
-//        break;
-//      
-//      if ([theEvent modifierFlags] & NSShiftKeyMask) {
-//        [self moveSubwordForwardAndModifySelection:self];
-//      } else {
-//        [self moveSubwordForward:self];
-//      }
-//      return;
-//    case NSDeleteCharacter: // "delete" on mac keyboards, but "backspace" on others
-//      if (!([theEvent modifierFlags] & NSControlKeyMask))
-//        break;
-//      
-//      [self deleteSubwordBackward:self];
-//      return;
-//    case NSDeleteFunctionKey: // "delete forward" on mac keyboards, but "delete" on others
-//      if (!([theEvent modifierFlags] & NSControlKeyMask))
-//        break;
-//      
-//      [self deleteSubwordForward:self];
-//      return;
-//    case NSTabCharacter:
-//    case 25: // shift-tab
-//      if (![self tabShouldIndentWithCurrentSelectedRange]) {
-//        break;
-//      }
-//      
-//      if (theEvent.modifierFlags & NSShiftKeyMask) {
-//        [self shiftSelectionLeft:self];
-//      } else {
-//        [self shiftSelectionRight:self];
-//      }
-//      return;
-//    
-//  }
-//  
-//  [super keyDown:theEvent];
+//
+  // handle other key
+  switch ([[theEvent charactersIgnoringModifiers] characterAtIndex:0]) {
+    case NSLeftArrowFunctionKey:
+      if (([theEvent modifierFlags] & NSControlKeyMask)) {
+        if ([theEvent modifierFlags] & NSShiftKeyMask) {
+          [self moveSubwordBackwardAndModifySelection:self];
+        } else {
+          [self moveSubwordBackward:self];
+        }
+      } else {
+        [self moveBackward:self];
+      }
+      return;
+    case NSRightArrowFunctionKey:;
+      if (([theEvent modifierFlags] & NSControlKeyMask)) {
+        if ([theEvent modifierFlags] & NSShiftKeyMask) {
+          [self moveSubwordForwardAndModifySelection:self];
+        } else {
+          [self moveSubwordForward:self];
+        }
+      } else {
+        [self moveForward:self];
+      }
+      return;
+    case NSDeleteCharacter: // "delete" on mac keyboards, but "backspace" on others
+      if (!([theEvent modifierFlags] & NSControlKeyMask))
+        break;
+      
+      [self deleteSubwordBackward:self];
+      return;
+    case NSDeleteFunctionKey: // "delete forward" on mac keyboards, but "delete" on others
+      if (!([theEvent modifierFlags] & NSControlKeyMask))
+        break;
+      
+      [self deleteSubwordForward:self];
+      return;
+    case NSTabCharacter:
+    case 25: // shift-tab
+      if (![self tabShouldIndentWithCurrentSelectedRange]) {
+        break;
+      }
+      
+      if (theEvent.modifierFlags & NSShiftKeyMask) {
+        [self shiftSelectionLeft:self];
+      } else {
+        [self shiftSelectionRight:self];
+      }
+      return;
+    
+  }
+  
+  [super keyDown:theEvent];
 }
 
 - (BOOL)insertionPointInLeadingWhitespace
@@ -814,6 +817,26 @@ if ([DuxPreferences editorDarkMode]) {
 //  }
 //  
 //  return newInsertionPoint + lineRange.location;
+}
+
+- (void)moveBackward:(id)sender
+{
+  if (self.insertionPointOffset == 0)
+    return;
+  
+  self.insertionPointOffset = self.insertionPointOffset - 1;
+  
+  [self updateInsertionPointLayer];
+}
+
+- (void)moveForward:(id)sender
+{
+  if (self.insertionPointOffset == self.storage.string.length - 1)
+    return;
+  
+  self.insertionPointOffset = self.insertionPointOffset + 1;
+  
+  [self updateInsertionPointLayer];
 }
 
 - (void)moveSubwordBackward:(id)sender
@@ -1043,9 +1066,21 @@ if ([DuxPreferences editorDarkMode]) {
     [layer setNeedsDisplay];
   }
   
+  [CATransaction commit];
+  
+  [self updateInsertionPointLayer];
+}
+
+- (void)updateInsertionPointLayer
+{
+  DuxLine *insertionPointLine = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
+  CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:self.insertionPointOffset];
+  insertionPoint.x = round(insertionPointLine.frame.origin.x + insertionPoint.x);
+  
   if (!self.insertionPointLayer) {
     self.insertionPointLayer = [[CALayer alloc] init];
-    self.insertionPointLayer.frame = CGRectMake(82, self.frame.size.height - 102, 3, 17);
+    self.insertionPointLayer.anchorPoint = CGPointMake(0, 0);
+    self.insertionPointLayer.frame = CGRectMake(insertionPoint.x, insertionPointLine.frame.origin.y, 2, 17);
     self.insertionPointLayer.delegate = self;
     self.insertionPointLayer.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;
     [self.insertionPointLayer setNeedsDisplay];
@@ -1061,27 +1096,38 @@ if ([DuxPreferences editorDarkMode]) {
     }
     [values addObject: @0.0f];
     CAKeyframeAnimation* anim = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
-    anim.values = @[@0.0, @1.0, @1.0, @0.0];
-    anim.keyTimes = @[@0.0, @0.15, @0.6, @1.0];
+    anim.values = @[@0.2, @1.0, @0.8, @0.8, @0.2];     // opacity at each keyframe
+    anim.keyTimes = @[@0.0, @0.15, @0.4, @0.6, @1.0];  // percentage through the animation for each keyframe
     anim.duration = 0.9;
-//    anim.timingFunctions = @[[CAValueFunction functionWithName: kCAMediaTimingFunctionEaseIn], [CAValueFunction functionWithName: kCAMediaTimingFunctionEaseOut], [CAValueFunction functionWithName: kCAMediaTimingFunctionEaseIn]];
+    //    anim.timingFunctions = @[[CAValueFunction functionWithName: kCAMediaTimingFunctionEaseIn], [CAValueFunction functionWithName: kCAMediaTimingFunctionEaseOut], [CAValueFunction functionWithName: kCAMediaTimingFunctionEaseIn]];
     anim.repeatCount = HUGE_VALF;
     [self.insertionPointLayer addAnimation:anim forKey:nil];
     
-//    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"opacity"];
-//    [animation setFromValue:[NSNumber numberWithFloat:1.0]];
-//    [animation setToValue:[NSNumber numberWithFloat:0.3]];
-//    [animation setDuration:0.5f];
-//    [animation setTimingFunction:[CAMediaTimingFunction
-//                                  functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
-//    [animation setAutoreverses:YES];
-//    [animation setRepeatCount:20000];
-//    [self.insertionPointLayer addAnimation:animation forKey:@"opacity"];
+    //    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"opacity"];
+    //    [animation setFromValue:[NSNumber numberWithFloat:1.0]];
+    //    [animation setToValue:[NSNumber numberWithFloat:0.3]];
+    //    [animation setDuration:0.5f];
+    //    [animation setTimingFunction:[CAMediaTimingFunction
+    //                                  functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
+    //    [animation setAutoreverses:YES];
+    //    [animation setRepeatCount:20000];
+    //    [self.insertionPointLayer addAnimation:animation forKey:@"opacity"];
   } else {
-    [self.layer addSublayer:self.insertionPointLayer]; // move it to the top
+    CGPoint point = CGPointMake(insertionPoint.x, insertionPointLine.frame.origin.y);
+                                
+    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"position"];
+    animation.duration = 0.1;
+    animation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+    animation.fromValue = [self.insertionPointLayer valueForKey:@"position"];
+    animation.toValue = [NSValue valueWithPoint:(NSPoint)point];
+    self.insertionPointLayer.position = point;
+    [self.insertionPointLayer addAnimation:animation forKey:@"position"];
+    
+//    self.insertionPointLayer.frame = CGRectMake(insertionPoint.x, insertionPointLine.frame.origin.y, 2, 17);
+    
+    
+    [self.layer addSublayer:self.insertionPointLayer]; // make sure it's the top layer
   }
-  
-  [CATransaction commit];
 }
 
 - (void)showInsertionPoint
@@ -1126,15 +1172,21 @@ if ([DuxPreferences editorDarkMode]) {
 {
   if (layer == self.insertionPointLayer) {
     CGMutablePathRef path = CGPathCreateMutable();
-    CGPathMoveToPoint(path, NULL, -0.3, 0);
-    CGPathAddLineToPoint(path, NULL, layer.frame.size.width + 0.3, 0);
-    CGPathAddLineToPoint(path, NULL, layer.frame.size.width - 1, 1.5);
-    CGPathAddLineToPoint(path, NULL, layer.frame.size.width - 1, layer.frame.size.height - 1.5);
-    CGPathAddLineToPoint(path, NULL, layer.frame.size.width + 0.3, layer.frame.size.height);
-    CGPathAddLineToPoint(path, NULL, -0.3, layer.frame.size.height);
-    CGPathAddLineToPoint(path, NULL, 1, layer.frame.size.height - 1.5);
-    CGPathAddLineToPoint(path, NULL, 1, 1.5);
+//    CGPathMoveToPoint(path, NULL, -0.3, 0);
+//    CGPathAddLineToPoint(path, NULL, layer.frame.size.width + 0.3, 0);
+//    CGPathAddLineToPoint(path, NULL, layer.frame.size.width - 1, 1.5);
+//    CGPathAddLineToPoint(path, NULL, layer.frame.size.width - 1, layer.frame.size.height - 1.5);
+//    CGPathAddLineToPoint(path, NULL, layer.frame.size.width + 0.3, layer.frame.size.height);
+//    CGPathAddLineToPoint(path, NULL, -0.3, layer.frame.size.height);
+//    CGPathAddLineToPoint(path, NULL, 1, layer.frame.size.height - 1.5);
+//    CGPathAddLineToPoint(path, NULL, 1, 1.5);
+//    CGPathCloseSubpath(path);
+    CGPathMoveToPoint(path, NULL, 0, 0);
+    CGPathAddLineToPoint(path, NULL, layer.frame.size.width, 0);
+    CGPathAddLineToPoint(path, NULL, layer.frame.size.width, layer.frame.size.height);
+    CGPathAddLineToPoint(path, NULL, 0, layer.frame.size.height);
     CGPathCloseSubpath(path);
+
     
     CGContextAddPath(context, path);
     

@@ -39,16 +39,16 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     [paragraphStyle setLineBreakMode:NSLineBreakByTruncatingMiddle];
     if ([DuxPreferences editorDarkMode]) {
       lineNumberAttributes = [[NSDictionary alloc] initWithObjectsAndKeys:[NSFont fontWithName:@"Source Code Pro ExtraLight" size:10], NSFontAttributeName,
-                          [NSColor colorWithCalibratedWhite:1 alpha:0.8].CGColor, NSForegroundColorAttributeName,
-                          paragraphStyle, NSParagraphStyleAttributeName,
-                          nil];
+                              [NSColor colorWithCalibratedWhite:1 alpha:0.8].CGColor, NSForegroundColorAttributeName,
+                              paragraphStyle, NSParagraphStyleAttributeName,
+                              nil];
     } else {
       lineNumberAttributes = [[NSDictionary alloc] initWithObjectsAndKeys:[NSFont fontWithName:@"Source Code Pro Light" size:10], NSFontAttributeName,
-                          [NSColor colorWithCalibratedWhite:0 alpha:1].CGColor, NSForegroundColorAttributeName,
-                          paragraphStyle, NSParagraphStyleAttributeName,
-                          nil];
+                              [NSColor colorWithCalibratedWhite:0 alpha:1].CGColor, NSForegroundColorAttributeName,
+                              paragraphStyle, NSParagraphStyleAttributeName,
+                              nil];
     }
-
+    
   });
 }
 
@@ -105,7 +105,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
       element = elementStack.lastObject;
       didJustPop = YES;
     }
-
+    
     elementStart = elementStart + elementLength;
     if (elementStart >= maxRange)
       break;
@@ -115,33 +115,8 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   return self;
 }
 
-- (CGFloat)heightWithWidth:(CGFloat)width
+- (NSAttributedString *)stringToDrawWithSyntaxAttributes:(BOOL)withSyntax
 {
-  NSAttributedString *stringToDraw;
-  if (self.range.length > 0) {
-    stringToDraw = [[NSAttributedString alloc] initWithString:[self.storage.string substringWithRange:self.range] attributes:self.storage.textAttributes];
-  } else {
-    stringToDraw = [[NSAttributedString alloc] initWithString:@" " attributes:self.storage.textAttributes];
-  }
-  
-  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
-  CGSize lineSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(width - DUX_LINE_NUMBER_WIDTH, CGFLOAT_MAX), NULL);
-  
-  return lineSize.height;
-}
-
-- (void)drawInContext:(CGContextRef)context
-{
-  [self drawInContext:context atYOffset:0 width:self.frame.size.width];
-}
-
-- (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth
-{
-  CGColorRef bgColor = [NSColor whiteColor].CGColor;
-  CGContextSetFillColorWithColor(context, bgColor);
-  CGContextFillRect(context, self.bounds);
-  
-  // calculate head indent
   NSUInteger whitespaceEnd = [self.storage.string rangeOfCharacterFromSet:nonWhitespaceCharacterSet options:NSLiteralSearch range:self.range].location;
   CGFloat headIndent = 28; // default
   NSMutableDictionary *attributes = self.storage.textAttributes.mutableCopy;
@@ -159,7 +134,6 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     [attributes setObject:paragraphStyle forKey:NSParagraphStyleAttributeName];
   }
   
-  // load attributed string
   NSMutableAttributedString *stringToDraw;
   if (self.range.length > 0) {
     stringToDraw = [[NSMutableAttributedString alloc] initWithString:[self.storage.string substringWithRange:self.range] attributes:attributes];
@@ -169,11 +143,69 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   
   // apply syntax colors
   
-//  [stringToDraw addAttribute:NSBackgroundColorAttributeName value:[NSColor redColor] range:NSMakeRange(0, stringToDraw.length)];
+  //  [stringToDraw addAttribute:NSBackgroundColorAttributeName value:[NSColor redColor] range:NSMakeRange(0, stringToDraw.length)];
   for (NSDictionary *elementRecord in self.elements) {
-//    NSLog(@"%@ %@ %@", [[elementRecord valueForKey:@"element"] color], [elementRecord valueForKey:@"start"], [elementRecord valueForKey:@"length"]);
+    //    NSLog(@"%@ %@ %@", [[elementRecord valueForKey:@"element"] color], [elementRecord valueForKey:@"start"], [elementRecord valueForKey:@"length"]);
     [stringToDraw addAttribute:NSForegroundColorAttributeName value:(id)[[elementRecord valueForKey:@"element"] color].CGColor range:NSMakeRange([[elementRecord valueForKey:@"start"] unsignedIntegerValue], [[elementRecord valueForKey:@"length"] unsignedIntegerValue])];
   }
+  
+  return stringToDraw;
+}
+
+- (CGFloat)heightWithWidth:(CGFloat)width
+{
+  NSAttributedString *stringToDraw = [self stringToDrawWithSyntaxAttributes:NO];
+  
+  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
+  CGSize lineSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(width - DUX_LINE_NUMBER_WIDTH, CGFLOAT_MAX), NULL);
+  
+  return lineSize.height;
+}
+
+- (CGPoint)pointForCharacterOffset:(NSUInteger)characterOffset
+{
+  if (characterOffset == self.range.location)
+    return CGPointMake(DUX_LINE_NUMBER_WIDTH, 0);
+  
+  NSUInteger adjustedOffset = characterOffset - self.range.location;
+  
+  NSAttributedString *stringToDraw = [self stringToDrawWithSyntaxAttributes:NO];
+  
+  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
+  
+  CGMutablePathRef path = CGPathCreateMutable();
+	CGPathAddRect(path, NULL, CGRectMake(self.bounds.origin.x + DUX_LINE_NUMBER_WIDTH, 0, self.bounds.size.width - DUX_LINE_NUMBER_WIDTH, self.bounds.size.height));
+  CTFrameRef ctframe = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
+  
+  CFArrayRef lines = CTFrameGetLines(ctframe);
+  CFIndex lineIndex, lineCount = CFArrayGetCount(lines);
+  for (lineIndex = 0; lineIndex < lineCount; lineIndex++) {
+    CTLineRef line = CFArrayGetValueAtIndex(lines, lineIndex);
+    CFRange lineRange = CTLineGetStringRange(line);
+    if (adjustedOffset >= lineRange.location && adjustedOffset <= (lineRange.location + lineRange.length)) {
+      return CGPointMake(CTLineGetOffsetForStringIndex(line, adjustedOffset - lineRange.location, NULL) + DUX_LINE_NUMBER_WIDTH, 0);
+    }
+  }
+  
+  return CGPointMake(FLT_MAX, 0);
+}
+
+- (void)drawInContext:(CGContextRef)context
+{
+  [self drawInContext:context atYOffset:0 width:self.frame.size.width];
+}
+
+- (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth
+{
+  CGColorRef bgColor = [NSColor whiteColor].CGColor;
+  CGContextSetFillColorWithColor(context, bgColor);
+  CGContextFillRect(context, self.bounds);
+  
+  // calculate head indent
+  
+  
+  // load attributed string
+  NSAttributedString *stringToDraw = [self stringToDrawWithSyntaxAttributes:YES];
   
   //Create Frame
   CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
