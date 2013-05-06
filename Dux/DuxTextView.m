@@ -166,14 +166,38 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (void)deleteBackward:(id)sender
 {
-  NSLog(@"not yet implemented");
-//  // when deleting in leading whitespace, indent left instead
-//	if ([self insertionPointInLeadingWhitespace] && [self.string beginingOfLineAtOffset:self.selectedRange.location] != self.selectedRange.location) {
-//		[self shiftSelectionLeft:self];
-//		return;
-//  }
-//  
-//  [super deleteBackward:sender];
+  //  // when deleting in leading whitespace, indent left instead
+  //	if ([self insertionPointInLeadingWhitespace] && [self.string beginingOfLineAtOffset:self.selectedRange.location] != self.selectedRange.location) {
+  //		[self shiftSelectionLeft:self];
+  //		return;
+  //  }
+  
+  if (self.insertionPointOffset == 0) {
+    NSBeep();
+    return;
+  }
+  
+  [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset - 1, 1) withString:@""];
+  self.insertionPointOffset = self.insertionPointOffset - 1;
+  [self updateLayer];
+}
+
+- (void)deleteForward:(id)sender
+{
+  //  // when deleting in leading whitespace, indent left instead
+  //	if ([self insertionPointInLeadingWhitespace] && [self.string beginingOfLineAtOffset:self.selectedRange.location] != self.selectedRange.location) {
+  //		[self shiftSelectionLeft:self];
+  //		return;
+  //  }
+  
+  if (self.insertionPointOffset == self.storage.length - 1) {
+    NSBeep();
+    return;
+  }
+  
+  [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset, 1) withString:@""];
+  self.insertionPointOffset = self.insertionPointOffset - 1;
+  [self updateLayer];
 }
 
 - (IBAction)jumpToLine:(id)sender
@@ -634,16 +658,18 @@ if ([DuxPreferences editorDarkMode]) {
       }
       return;
     case NSDeleteCharacter: // "delete" on mac keyboards, but "backspace" on others
-      if (!([theEvent modifierFlags] & NSControlKeyMask))
-        break;
-      
-      [self deleteSubwordBackward:self];
+      if (([theEvent modifierFlags] & NSControlKeyMask)) {
+        [self deleteSubwordBackward:self];
+      } else {
+        [self deleteBackward:self];
+      }
       return;
     case NSDeleteFunctionKey: // "delete forward" on mac keyboards, but "delete" on others
-      if (!([theEvent modifierFlags] & NSControlKeyMask))
-        break;
-      
-      [self deleteSubwordForward:self];
+      if (([theEvent modifierFlags] & NSControlKeyMask)) {
+        [self deleteSubwordForward:self];
+      } else {
+        [self deleteForward:self];
+      }
       return;
     case NSTabCharacter:
     case 25: // shift-tab
@@ -657,10 +683,12 @@ if ([DuxPreferences editorDarkMode]) {
         [self shiftSelectionRight:self];
       }
       return;
-    
   }
   
-  [super keyDown:theEvent];
+  [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset, 0) withString:theEvent.characters];
+  self.insertionPointOffset = self.insertionPointOffset + theEvent.characters.length;
+  
+  [self updateLayer];
 }
 
 - (BOOL)insertionPointInLeadingWhitespace
@@ -1023,8 +1051,11 @@ if ([DuxPreferences editorDarkMode]) {
   yOffset = round(yOffset);
   
   NSMutableSet *lineLayers = [[NSMutableSet alloc] init];
+  DuxLine *lastLine = nil;
   while (yOffset > -200) { // layout lines for a couple hundred extra pixels to improve animations
     DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
+    if (line == lastLine)
+      break;
     if (!line)
       break;
     
@@ -1046,6 +1077,7 @@ if ([DuxPreferences editorDarkMode]) {
     
     yOffset -= lineHeight;
     yOffset = round(yOffset);
+    lastLine = line;
   }
   
   for (CALayer *layer in self.layer.sublayers.copy) {

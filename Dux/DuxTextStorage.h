@@ -20,6 +20,7 @@
 
 @property NSString *string;
 @property (readonly) NSUInteger length;
+
 @property DuxLanguage *language;
 @property (readonly) NSDictionary *textAttributes;
 

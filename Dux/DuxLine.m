@@ -237,4 +237,9 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   return yOffset - lineHeight;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"<DuxLine %lu,%lu>: \"%@\"", (unsigned long)self.range.location, (unsigned long)self.range.length, [self.storage.string substringWithRange:self.range]];
+}
+
 @end

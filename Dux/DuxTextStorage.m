@@ -60,6 +60,7 @@ static NSCharacterSet *newlineCharacters;
 - (void)setString:(NSString *)string
 {
   contents = string.mutableCopy;
+  
   [self findLines];
 }
 
@@ -88,13 +89,14 @@ static NSCharacterSet *newlineCharacters;
   NSUInteger lineEnd = 0;
   DuxLine *line;
   NSMutableArray *elementStack = @[language.baseElement].mutableCopy;
+  [lineNumbers setCount:0];
   [language prepareToParseTextStorage:self];
   while (true) {
     index++;
     
     lineEnd = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch range:NSMakeRange(lineStart, contents.length - lineStart)].location;
     if (lineEnd == NSNotFound)
-      lineEnd = contents.length == 0 ? 0 : contents.length - 1;
+      lineEnd = contents.length == 0 ? 0 : contents.length;
     
     line = [[DuxLine alloc] initWithStorage:self range:NSMakeRange(lineStart, lineEnd - lineStart) lineNumber:[NSString stringWithFormat:@"%lu", (unsigned long)index] workingElementStack:elementStack];
     
@@ -102,7 +104,7 @@ static NSCharacterSet *newlineCharacters;
     [lineNumbers insertPointer:(void *)line atIndex:lineStart];
     
     lineStart = lineEnd + 1;
-    if (lineStart >= contents.length)
+    if (lineStart > contents.length)
       break;
   }
 }
@@ -110,11 +112,13 @@ static NSCharacterSet *newlineCharacters;
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string
 {
   [contents replaceCharactersInRange:range withString:string];
+  
+  [self findLines];
 }
 
 - (DuxLine *)lineAtCharacterPosition:(NSUInteger)characterPosition
 {
-  if (characterPosition >= self.string.length)
+  if (characterPosition > self.string.length)
     return nil;
   
   NSUInteger lineStart;
