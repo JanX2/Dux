@@ -1120,13 +1120,6 @@ if ([DuxPreferences editorDarkMode]) {
     self.insertionPointLayer.opacity = 0;
     [self.layer addSublayer:self.insertionPointLayer];
     
-    NSMutableArray* values = [NSMutableArray array];
-    [values addObject: @0.0f];
-    int direction = 1;
-    for (int i = 20; i < 60; i += 5, direction *= -1) { // alternate directions
-      [values addObject: @(direction*M_PI/(float)i)];
-    }
-    [values addObject: @0.0f];
     CAKeyframeAnimation* anim = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
     anim.values = @[@0.2, @1.0, @0.8, @0.8, @0.2];     // opacity at each keyframe
     anim.keyTimes = @[@0.0, @0.15, @0.4, @0.6, @1.0];  // percentage through the animation for each keyframe
@@ -1145,14 +1138,22 @@ if ([DuxPreferences editorDarkMode]) {
     //    [animation setRepeatCount:20000];
     //    [self.insertionPointLayer addAnimation:animation forKey:@"opacity"];
   } else {
-    CGPoint point = CGPointMake(insertionPoint.x, insertionPointLine.frame.origin.y);
+    CGPoint origPoint = self.insertionPointLayer.position;
+    CGPoint destPoint = CGPointMake(insertionPoint.x, insertionPointLine.frame.origin.y);
+    CGPoint partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.7), origPoint.y + ((destPoint.y - origPoint.y) * 0.15));
                                 
-    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"position"];
+//    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"position"];
+//    animation.duration = 0.1;
+//    animation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+//    animation.fromValue = [self.insertionPointLayer valueForKey:@"position"];
+//    animation.toValue = [NSValue valueWithPoint:(NSPoint)point];
+    
+    CAKeyframeAnimation* animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+    animation.values = @[[NSValue valueWithPoint:(NSPoint)origPoint], [NSValue valueWithPoint:(NSPoint)partialPoint], [NSValue valueWithPoint:(NSPoint)destPoint]];
+    animation.keyTimes = @[@0.0, @0.15, @1.0];
     animation.duration = 0.1;
-    animation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
-    animation.fromValue = [self.insertionPointLayer valueForKey:@"position"];
-    animation.toValue = [NSValue valueWithPoint:(NSPoint)point];
-    self.insertionPointLayer.position = point;
+    
+    self.insertionPointLayer.position = destPoint;
     [self.insertionPointLayer addAnimation:animation forKey:@"position"];
     
 //    self.insertionPointLayer.frame = CGRectMake(insertionPoint.x, insertionPointLine.frame.origin.y, 2, 17);
