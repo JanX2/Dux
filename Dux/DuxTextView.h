@@ -29,7 +29,7 @@
 @property NSUInteger pageGuidePosition;
 @property NSColor *backgroundColor;
 @property NSColor *insertionPointColor;
-@property (readwrite) NSUInteger insertionPointOffset;
+@property (readwrite,nonatomic) NSUInteger insertionPointOffset;
 @property (readwrite) NSArray *selectedRanges;
 @property DuxTextStorage *storage;
 @property NSString *string;
@@ -66,7 +66,6 @@
 - (void)selectionDidChange:(NSNotification *)notif;
 
 - (void)updateHighlightedElements;
-- (void)processLines;
 - (void)drawLineNumbersInRect:(NSRect)targetRect;
 
 - (BOOL)insertionPointInLeadingWhitespace;

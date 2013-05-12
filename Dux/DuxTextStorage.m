@@ -103,7 +103,17 @@ static NSCharacterSet *newlineCharacters;
     [lineNumbers setCount:lineStart + 1];
     [lineNumbers insertPointer:(void *)line atIndex:lineStart];
     
-    lineStart = lineEnd + 1;
+    // is it a windows newline?
+    BOOL isWindowsNewline = NO;
+    if (self.string.length >= lineEnd + 2) {
+      if ([self.string characterAtIndex:lineEnd] == '\r') {
+        if ([self.string characterAtIndex:lineEnd + 1] == '\n') {
+          isWindowsNewline = YES;
+        }
+      }
+    }
+    
+    lineStart = lineEnd + (isWindowsNewline ? 2 : 1);
     if (lineStart > contents.length)
       break;
   }
@@ -116,10 +126,32 @@ static NSCharacterSet *newlineCharacters;
   [self findLines];
 }
 
+- (BOOL)positionSplitsWindowsNewline:(NSUInteger)characterPosition
+{
+  if (characterPosition == 0)
+    return NO;
+  
+  if (characterPosition >= self.string.length)
+    return NO;
+  
+  if ([self.string characterAtIndex:characterPosition - 1] != '\r')
+    return NO;
+  
+  if ([self.string characterAtIndex:characterPosition] != '\n')
+    return NO;
+  
+  return YES;
+}
+
 - (DuxLine *)lineAtCharacterPosition:(NSUInteger)characterPosition
 {
   if (characterPosition > self.string.length)
     return nil;
+  
+  // are we in the middle of a windows newline?
+  if ([self positionSplitsWindowsNewline:characterPosition]) {
+    characterPosition++;
+  }
   
   NSUInteger lineStart;
   NSRange lineStartRange = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch | NSBackwardsSearch range:NSMakeRange(0, characterPosition)];
@@ -129,6 +161,30 @@ static NSCharacterSet *newlineCharacters;
     lineStart = lineStartRange.location + lineStartRange.length;
   
   return [lineNumbers pointerAtIndex:lineStart];
+}
+
+- (DuxLine *)lineBeforeLine:(DuxLine *)line
+{
+  if (line.range.location == 0)
+    return nil;
+  
+  NSUInteger newPosition = line.range.location - 1;
+  if ([self positionSplitsWindowsNewline:newPosition])
+    newPosition--;
+  
+  return [self lineAtCharacterPosition:newPosition];
+}
+
+- (DuxLine *)lineAfterLine:(DuxLine *)line
+{
+  if (NSMaxRange(line.range) == (self.string.length - 1))
+    return nil;
+  
+  NSUInteger newPosition = NSMaxRange(line.range) + 1;
+  if ([self positionSplitsWindowsNewline:newPosition])
+    newPosition++;
+  
+  return [self lineAtCharacterPosition:newPosition];
 }
 
 @end

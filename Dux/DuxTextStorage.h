@@ -27,5 +27,9 @@
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string;
 
 - (DuxLine *)lineAtCharacterPosition:(NSUInteger)characterPosition;
+- (DuxLine *)lineBeforeLine:(DuxLine *)line;
+- (DuxLine *)lineAfterLine:(DuxLine *)line;
+
+- (BOOL)positionSplitsWindowsNewline:(NSUInteger)characterPosition; // if characterPosition is in between a \r\n pair, this returns YES. Text should never be inserted in between these two characters, but DuxTextStorage does not guard against that for you.
 
 @end

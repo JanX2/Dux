@@ -60,7 +60,7 @@ static NSCharacterSet *newlineCharacterSet;
   
   self.scrollPosition = 0;
   
-  self.insertionPointOffset = 0;
+  _insertionPointOffset = 0;
   
   self.wantsLayer = YES;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
@@ -170,8 +170,15 @@ static NSCharacterSet *newlineCharacterSet;
     return;
   }
   
-  [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset - 1, 1) withString:@""];
-  self.insertionPointOffset = self.insertionPointOffset - 1;
+  NSRange deleteRange = NSMakeRange(self.insertionPointOffset - 1, 1);
+  if ([self.storage positionSplitsWindowsNewline:deleteRange.location]) {
+    deleteRange.location--;
+    deleteRange.length++;
+  }
+  
+  _insertionPointOffset = self.insertionPointOffset - deleteRange.length; // update insertion point offset without using the setter, or else animation will get weird
+  
+  [self.storage replaceCharactersInRange:deleteRange withString:@""];
   [self updateLayer];
 }
 
@@ -183,14 +190,30 @@ static NSCharacterSet *newlineCharacterSet;
   //		return;
   //  }
   
-  if (self.insertionPointOffset == self.storage.length - 1) {
+  if (self.insertionPointOffset == 0) {
     NSBeep();
     return;
   }
   
-  [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset, 1) withString:@""];
-  self.insertionPointOffset = self.insertionPointOffset - 1;
+  NSRange deleteRange = NSMakeRange(self.insertionPointOffset, 1);
+  if ([self.storage positionSplitsWindowsNewline:NSMaxRange(deleteRange)]) {
+    deleteRange.length++;
+  }
+  
+  [self.storage replaceCharactersInRange:deleteRange withString:@""];
   [self updateLayer];
+}
+
+- (void)setInsertionPointOffset:(NSUInteger)newValue
+{
+  // are we in the middle of a windows newline?
+  if ([self.storage positionSplitsWindowsNewline:newValue]) {
+    newValue++;
+  }
+  
+  _insertionPointOffset = newValue;
+  
+  [self updateInsertionPointLayer];
 }
 
 - (IBAction)jumpToLine:(id)sender
@@ -542,7 +565,12 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)insertText:(id)insertString
 {
-  NSLog(@"not yet implemented");
+  NSString *string = [insertString isKindOfClass:[NSAttributedString class]] ? [insertString string] : insertString;
+  
+  [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset, 0) withString:string];
+  [self updateLayer];
+  
+  self.insertionPointOffset = self.insertionPointOffset + string.length;
 }
 
 - (void)insertSnippet:(NSString *)snippet
@@ -694,10 +722,7 @@ static NSCharacterSet *newlineCharacterSet;
       return;
   }
   
-  [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset, 0) withString:theEvent.characters];
-  self.insertionPointOffset = self.insertionPointOffset + theEvent.characters.length;
-  
-  [self updateLayer];
+  [self insertText:theEvent.characters];
 }
 
 - (BOOL)insertionPointInLeadingWhitespace
@@ -861,9 +886,11 @@ static NSCharacterSet *newlineCharacterSet;
   if (self.insertionPointOffset == 0)
     return;
   
-  self.insertionPointOffset = self.insertionPointOffset - 1;
+  NSUInteger newOffset = self.insertionPointOffset - 1;
+  if ([self.storage positionSplitsWindowsNewline:newOffset])
+    newOffset--;
   
-  [self updateInsertionPointLayer];
+  self.insertionPointOffset = newOffset;
 }
 
 - (void)moveForward:(id)sender
@@ -872,44 +899,40 @@ static NSCharacterSet *newlineCharacterSet;
     return;
   
   self.insertionPointOffset = self.insertionPointOffset + 1;
-  
-  [self updateInsertionPointLayer];
 }
 
 - (void)moveUp:(id)sender
 {
   DuxLine *currentLine = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
-  if (currentLine.range.location == 0){
-    [self moveToBeginningOfLine:sender];
+  DuxLine *newLine = [self.storage lineBeforeLine:currentLine];
+  
+  if (!newLine){
+    self.insertionPointOffset = 0;
     return;
   }
-  
-  DuxLine *newLine = [self.storage lineAtCharacterPosition:currentLine.range.location - 1];
   
   NSUInteger columnIndex = self.insertionPointOffset - currentLine.range.location;
   if (columnIndex > newLine.range.length)
     columnIndex = newLine.range.length;
   
   self.insertionPointOffset = newLine.range.location + columnIndex;
-  [self updateInsertionPointLayer];
 }
 
 - (void)moveDown:(id)sender
 {
   DuxLine *currentLine = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
-  if (NSMaxRange(currentLine.range) == self.storage.length){
-    [self moveToEndOfLine:sender];
+  DuxLine *newLine = [self.storage lineAfterLine:currentLine];
+  
+  if (!newLine){
+    self.insertionPointOffset = self.storage.length;
     return;
   }
-  
-  DuxLine *newLine = [self.storage lineAtCharacterPosition:NSMaxRange(currentLine.range) + 1];
   
   NSUInteger columnIndex = self.insertionPointOffset - currentLine.range.location;
   if (columnIndex > newLine.range.length)
     columnIndex = newLine.range.length;
   
   self.insertionPointOffset = newLine.range.location + columnIndex;
-  [self updateInsertionPointLayer];
 }
 
 - (void)moveToBeginningOfLine:(id)sender
@@ -925,7 +948,6 @@ static NSCharacterSet *newlineCharacterSet;
   DuxLine *line = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
   
   self.insertionPointOffset = NSMaxRange(line.range);
-  [self updateInsertionPointLayer];
 }
 
 - (void)moveSubwordBackward:(id)sender
@@ -1099,30 +1121,29 @@ static NSCharacterSet *newlineCharacterSet;
   [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disable all animations. for now we assume only the line positions will change (don't want to animate that). any line height changes, we will animate
   BOOL willAnimate = NO;
   
-  NSUInteger characterPosition = self.scrollPosition;
   CGFloat leftGutter = 4;
   CGFloat rightGutter = 4;
   CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
   CGFloat yOffset = self.frame.size.height;
   
-  DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
+  DuxLine *line = [self.storage lineAtCharacterPosition:self.scrollPosition];
   if (line.range.length > 0) {
     yOffset += ([line heightWithWidth:lineWidth] * ((self.scrollPosition - line.range.location) / line.range.length));
   }
   yOffset = round(yOffset);
   
   NSMutableSet *lineLayers = [[NSMutableSet alloc] init];
-  DuxLine *lastLine = nil;
+  BOOL isFirst = YES;
   while (yOffset > -200) { // layout lines for a couple hundred extra pixels to improve animations
-    DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
-    if (line == lastLine)
-      break;
+    if (isFirst) {
+      isFirst = NO;
+    } else {
+      line = [self.storage lineAfterLine:line];
+    }
     if (!line)
       break;
     
     CGFloat lineHeight = [line heightWithWidth:lineWidth];
-    
-    characterPosition = line.range.location + line.range.length + 1;
     
     BOOL heightChanged = (fabs(line.frame.size.height - lineHeight) > 0.1);
     if (heightChanged && !willAnimate) {
@@ -1138,7 +1159,6 @@ static NSCharacterSet *newlineCharacterSet;
     
     yOffset -= lineHeight;
     yOffset = round(yOffset);
-    lastLine = line;
   }
   
   for (CALayer *layer in self.layer.sublayers.copy) {
