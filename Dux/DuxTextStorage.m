@@ -148,6 +148,9 @@ static NSCharacterSet *newlineCharacters;
   if (characterPosition > self.string.length)
     return nil;
   
+  if (characterPosition == 0)
+    return [lineNumbers pointerAtIndex:0];
+  
   // are we in the middle of a windows newline?
   if ([self positionSplitsWindowsNewline:characterPosition]) {
     characterPosition++;
@@ -155,7 +158,7 @@ static NSCharacterSet *newlineCharacters;
   
   NSUInteger lineStart;
   NSRange lineStartRange = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch | NSBackwardsSearch range:NSMakeRange(0, characterPosition)];
-  if (lineStartRange.location == NSNotFound || lineStartRange.location == 0)
+  if (lineStartRange.location == NSNotFound || lineStartRange.length == 0)
     lineStart = 0;
   else
     lineStart = lineStartRange.location + lineStartRange.length;
@@ -177,7 +180,8 @@ static NSCharacterSet *newlineCharacters;
 
 - (DuxLine *)lineAfterLine:(DuxLine *)line
 {
-  if (NSMaxRange(line.range) == (self.string.length - 1))
+  if (NSMaxRange(line.range) >= self.string.length
+      )
     return nil;
   
   NSUInteger newPosition = NSMaxRange(line.range) + 1;

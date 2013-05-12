@@ -247,7 +247,7 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (IBAction)convertToNewlineStyleFromMenuItem:(NSMenuItem *)sender
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  DuxNewlineOptions newlineStyle = [sender tag];
 //  
 //  NSString *oldString = self.textView.string;
@@ -305,7 +305,7 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (BOOL)convertContentToEncoding:(NSStringEncoding)newEncoding
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
   return NO;
 //  NSData *data = [textContentStorage.string dataUsingEncoding:newEncoding allowLossyConversion:NO];
 //  if (!data)
@@ -324,7 +324,7 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (BOOL)reinterprateContentWithEncoding:(NSStringEncoding)newEncoding
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
   return NO;
 //  // convert to NSData with current encoding
 //  NSData *data = [textContentStorage.string dataUsingEncoding:self.stringEncoding];

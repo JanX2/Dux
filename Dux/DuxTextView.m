@@ -112,7 +112,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)insertNewline:(id)sender
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  // find the start of the current line
 //  NSUInteger lineStart = 0;
 //  NSRange newlineRange = [self.textStorage.string rangeOfCharacterFromSet:newlineCharacterSet options:NSBackwardsSearch range:NSMakeRange(0, self.selectedRange.location)];
@@ -215,7 +215,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (IBAction)goToLinePanelButtonClicked:(id)sender
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  // figure out what line we are navigating to
 //  NSInteger targetLine = self.goToLineSearchField.integerValue;
 //  if (!targetLine) {
@@ -260,7 +260,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (IBAction)commentSelection:(id)sender
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  // get the selected range
 //  NSRange commentRange = self.selectedRange;
 //  
@@ -294,14 +294,14 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (IBAction)uncomment:(NSRange)commentRange
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  DuxLanguage *language = [self.highlighter languageForRange:self.selectedRange ofTextStorage:self.textStorage];
 //  [language removeCommentsAroundRange:commentRange ofTextView:self];
 }
 
 - (IBAction)shiftSelectionRight:(id)sender
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //	if ([DuxPreferences indentWidth] == 0) // indenting disabled
 //		return;
 //	
@@ -474,12 +474,12 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)setSelectedRanges:(NSArray *)ranges affinity:(NSSelectionAffinity)affinity stillSelecting:(BOOL)stillSelectingFlag
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 }
 
 - (NSArray *)completionsForPartialWordRange:(NSRange)charRange indexOfSelectedItem:(NSInteger *)index
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
   return @[];
 //  NSTextStorage *textStorage = self.textStorage;
 //  NSString *string = textStorage.string;
@@ -562,7 +562,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)insertSnippet:(NSString *)snippet
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  if (snippet.length == 0)
 //    return;
 //  
@@ -714,7 +714,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (BOOL)insertionPointInLeadingWhitespace
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
   return NO;
 //	if (self.selectedRanges.count > 1)
 //		return NO;
@@ -748,7 +748,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (NSUInteger)findBeginingOfSubwordStartingAt:(NSUInteger)offset
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
   return offset;
 //  // find one of three possibilities:
 //  //  - the begining of a single word, all uppercase, that is at the end of the search range (parenthesis set 2)
@@ -807,7 +807,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (NSUInteger)findEndOfSubwordStartingAt:(NSUInteger)offset
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
   return offset;
 //  // find one of two possibilities:
 //  //  - the end of a single word, all uppercase, that is at the begining of the search range (parenthesis set 2)
@@ -999,7 +999,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)deleteSubwordBackward:(id)sender
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  if (self.selectedRanges.count > 1 || self.selectedRange.length > 0)
 //    return [self deleteBackward:sender];
 //  
@@ -1012,7 +1012,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)deleteSubwordForward:(id)sender
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  if (self.selectedRanges.count > 1 || self.selectedRange.length > 0)
 //    return [self deleteForward:sender];
 //  
@@ -1030,7 +1030,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)duplicate:(id)sender
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  NSArray *ranges;
 //  NSRange newSelectionSubrange = NSMakeRange(NSNotFound, 0); // if NSNotFound, new selection will be the inserted text. else new selection will be a subrange of the inserted text
 //  if (self.selectedRange.length == 0) {
@@ -1083,24 +1083,6 @@ static NSCharacterSet *newlineCharacterSet;
 //  }
 //  [self setSelectedRanges:[newSelectedRanges copy]];
 }
-
-- (void)setNeedsDisplayInRect:(NSRect)rect avoidAdditionalLayout:(BOOL)flag
-{
-  NSLog(@"not yet implemented");
-  [self setNeedsDisplay:YES];
-//  // force all screen draws to be the full width
-//  rect.origin.x = 0;
-//  rect.size.width = self.bounds.size.width;
-//  
-//  [super setNeedsDisplayInRect:rect avoidAdditionalLayout:flag];
-}
-
-//- (void)drawLayer:(CALayer *)layer inContext:(CGContextRef)context
-//{
-//  CGColorRef bgColor = [NSColor blueColor].CGColor;
-//  CGContextSetFillColorWithColor(context, bgColor);
-//  CGContextFillRect(context, layer.bounds);
-//}
 
 - (void)updateLayer
 {
@@ -1310,7 +1292,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)updateHighlightedElements
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  // We only do highlighting when the main thread isn't very busy dealing with user activity in our text view.
 //  // By delaying this method for a short moment, and when it is run checking if this really is the most recent
 //  // call, we ensure this will only happen when the user stops typing, particularly if the document is complicated
@@ -1383,12 +1365,12 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)editorFontDidChange:(NSNotification *)notif
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 }
 
 - (void)editorTabWidthDidChange:(NSNotification *)notif
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 }
 
 - (void)showPageGuideDidChange:(NSNotification *)notif

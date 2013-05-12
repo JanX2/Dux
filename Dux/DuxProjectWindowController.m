@@ -546,7 +546,7 @@ static NSMutableArray *projects = nil;
 
 - (IBAction)performFindPanelAction:(id)sender
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 //  if (!self.document) {
 //    return;
 //  }

@@ -174,6 +174,25 @@
   line = [storage lineAtCharacterPosition:@"foo\n".length];
   STAssertEquals([storage lineBeforeLine:line], [storage lineAtCharacterPosition:0], nil);
   STAssertNil([storage lineAfterLine:line], nil);
+  
+  // test empty lines
+  storage = [[DuxTextStorage alloc] init];
+  [storage replaceCharactersInRange:NSMakeRange(0, 0) withString:@"\nfoo\n\nbar\n"];
+  
+  line = [storage lineAtCharacterPosition:0];
+  STAssertNil([storage lineBeforeLine:line], nil);
+  STAssertEquals([storage lineAfterLine:line], [storage lineAtCharacterPosition:@"\n".length], nil);
+  
+  line = [storage lineAtCharacterPosition:@"\nfoo".length];
+  STAssertEquals([storage lineAfterLine:line], [storage lineAtCharacterPosition:@"\nfoo\n".length], nil);
+  
+  line = [storage lineAtCharacterPosition:@"\nfoo\n".length];
+  STAssertEquals([storage lineAfterLine:line], [storage lineAtCharacterPosition:@"\nfoo\n\n".length], nil);
+  
+  line = [storage lineAtCharacterPosition:@"\nfoo\n\nbar".length];
+  STAssertEquals([storage lineAfterLine:line], [storage lineAtCharacterPosition:@"\nfoo\n\nbar\n".length], nil);
+  
+  
 }
 
 @end
