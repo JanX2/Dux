@@ -39,16 +39,18 @@ static NSCharacterSet *newlineCharacterSet;
   if (!(self = [super initWithCoder:aDecoder]))
     return nil;
   
+  self.storage = [[DuxTextStorage alloc] init];
   [self initDuxTextView];
   
   return self;
 }
 
-- (id)initWithFrame:(NSRect)frameRect textContainer:(NSTextContainer *)container
+- (id)initWithFrame:(NSRect)frameRect storage:(DuxTextStorage *)storage
 {
   if (!(self = [super initWithFrame:frameRect]))
     return nil;
   
+  self.storage = storage;
   [self initDuxTextView];
   
   return self;
@@ -56,8 +58,6 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)initDuxTextView
 {
-  self.storage = [[DuxTextStorage alloc] init];
-  
   self.scrollPosition = 0;
   
   _insertionPointOffset = 0;
@@ -66,7 +66,6 @@ static NSCharacterSet *newlineCharacterSet;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
   self.layer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
   [self.layer setNeedsDisplay];
-//  self.layer.sublayerTransform = CATransform3DMakeScale(1.0f, -1.0f, 1.0f);
     
   self.showLineNumbers = [DuxPreferences showLineNumbers];
   self.showPageGuide = [DuxPreferences showPageGuide];
@@ -76,20 +75,8 @@ static NSCharacterSet *newlineCharacterSet;
   container.leftGutterWidth = self.showLineNumbers ? 34 : 0;
   container.widthTracksTextView = YES;
   
-  // disable line wrap? currently commented out, because it's a bit buggy
-//  container.containerSize = NSMakeSize(FLT_MAX, FLT_MAX);
-//  container.widthTracksTextView = NO;
-//  self.horizontallyResizable = YES;
-  
-//  if (!self.textStorage.delegate)
-//    NSLog(@"oops! can't  find syntax highlighter!");
-//  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(syntaxHighlighterDidFinishHighlighting:) name:@"DuxSyntaxHighlighterDidFinishHighlighting" object:self.textStorage.delegate];
-  
-  // apply the text view
-  
+  // register for some preferences
   NSNotificationCenter *notifCenter = [NSNotificationCenter defaultCenter];
-  [notifCenter addObserver:self selector:@selector(selectionDidChange:) name:NSTextViewDidChangeSelectionNotification object:self];
-  [notifCenter addObserver:self selector:@selector(textDidChange:) name:NSTextDidChangeNotification object:self];
   [notifCenter addObserver:self selector:@selector(editorFontDidChange:) name:DuxPreferencesEditorFontDidChangeNotification object:nil];
   [notifCenter addObserver:self selector:@selector(showLineNumbersDidChange:) name:DuxPreferencesShowLineNumbersDidChangeNotification object:nil];
   [notifCenter addObserver:self selector:@selector(showPageGuideDidChange:) name:DuxPreferencesShowPageGuideDidChangeNotification object:nil];
@@ -1311,104 +1298,6 @@ static NSCharacterSet *newlineCharacterSet;
   }
 }
 
-//- (void)drawRect:(NSRect)dirtyRect
-//{
-//  [[NSColor whiteColor] set];
-//  NSRectFill(dirtyRect);
-//  
-//  CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
-//  CGContextSetTextMatrix(context, CGAffineTransformIdentity);
-//  
-//  
-//  //  NSUInteger lineIndex = [self.layoutManager lineIndexForCharacterPosition:self.scrollPosition];
-//  NSUInteger characterPosition = self.scrollPosition;
-//  NSMutableDictionary *workingAttributes = self.textAttributes.mutableCopy;
-//  CGFloat lineWidth = self.frame.size.width;
-//  CGFloat yOffset = self.frame.size.height - self.scrollDelta;
-//  CGFloat minYOffset = 0 - [@" " sizeWithAttributes:workingAttributes].height;
-//  
-//  while (yOffset > minYOffset) {
-//    DuxLine *line = [self.storage lineAtCharacterPosition:characterPosition];
-//    if (!line)
-//      break;
-//    
-//    yOffset = [line drawInContext:context atYOffset:yOffset width:lineWidth attributes:workingAttributes];
-//    
-//    characterPosition += line.range.length + 1;
-//  }
-//
-//  
-//  NSLog(@"not yet implemented");
-//  
-//  
-////	NSRect documentVisibleRect = self.enclosingScrollView.documentVisibleRect;
-////	NSLayoutManager *layoutManager = self.layoutManager;
-////	NSTextContainer *textContainer = self.textContainer;
-////  
-////  // background
-////  [self.backgroundColor set];
-////  NSRectFill(dirtyRect);
-////  
-////  // page guide
-////  if (self.showPageGuide) {
-////if ([DuxPreferences editorDarkMode]) {
-////    [[NSColor colorWithDeviceWhite:1 alpha:0.1] set];
-////} else {
-////    [[NSColor colorWithDeviceWhite:0.85 alpha:1] set];
-////}
-////    float position = self.pageGuidePosition;
-////    if (self.showLineNumbers)
-////      position += 34;
-////    position += 0.5;
-////    [NSBezierPath strokeLineFromPoint:NSMakePoint(position, NSMinY(documentVisibleRect)) toPoint:NSMakePoint(position, NSMaxY(documentVisibleRect))];
-////  }
-////  
-////  // draw highlighted elements
-////  NSRange glyphRange;
-////  NSRectArray glyphRects;
-////  NSUInteger glyphRectsIndex;
-////  NSUInteger glyphRectsCount;
-////if ([DuxPreferences editorDarkMode]) {
-////  [[NSColor colorWithCalibratedRed:0.173 green:0.151 blue:0.369 alpha:1.000] set];
-////} else {
-////  [[NSColor colorWithCalibratedRed:0.973 green:0.951 blue:0.769 alpha:1.000] set];
-////}
-////  float glyphRectExtraX = (self.showLineNumbers) ? 33.5 : 0;
-////  for (NSValue *range in self.highlightedElements) {
-////    glyphRange = [layoutManager glyphRangeForCharacterRange:range.rangeValue actualCharacterRange:NULL];
-////    
-////    glyphRects = [layoutManager rectArrayForGlyphRange:glyphRange withinSelectedGlyphRange:glyphRange inTextContainer:textContainer rectCount:&glyphRectsCount];
-////    for (glyphRectsIndex = 0; glyphRectsIndex < glyphRectsCount; glyphRectsIndex++) {
-////      CGRect glyphRect = glyphRects[glyphRectsIndex];
-////      glyphRect.origin.x += glyphRectExtraX;
-////      [NSBezierPath fillRect:glyphRect];
-////    }
-////  }
-////
-////  
-////  // line numbers
-////  if (self.showLineNumbers) {
-////		// background
-//////if ([DuxPreferences editorDarkMode]) {
-//////    [[NSColor colorWithDeviceWhite:0.2 alpha:0] set];
-//////#else
-//////    [[NSColor colorWithDeviceWhite:0.85 alpha:1] set];
-//////#endif
-//////    [NSBezierPath strokeLineFromPoint:NSMakePoint(33.5, NSMinY(documentVisibleRect)) toPoint:NSMakePoint(33.5, NSMaxY(documentVisibleRect))];
-//////if ([DuxPreferences editorDarkMode]) {
-//////    [[NSColor colorWithDeviceWhite:0.1 alpha:0] set];
-//////#else
-//////    [[NSColor colorWithDeviceWhite:0.95 alpha:1] set];
-//////#endif
-//////    [NSBezierPath fillRect:NSMakeRect(0, NSMinY(documentVisibleRect), 33.5, NSMaxY(documentVisibleRect))];
-////    
-////    // line numbers
-////    [self drawLineNumbersInRect:dirtyRect];
-////  }
-////  
-////  [super drawRect:dirtyRect];
-//}
-
 - (void)selectionDidChange:(NSNotification *)notif
 {
   [self updateHighlightedElements];
@@ -1492,72 +1381,6 @@ static NSCharacterSet *newlineCharacterSet;
 //  });
 }
 
-- (void)drawLineNumbersInRect:(NSRect)targetRect
-{
-  NSLog(@"not yet implemented");
-//	// init
-//  [self processLines];
-//  NSLayoutManager *layoutManager = self.layoutManager;
-//	NSTextContainer *textContainer = self.textContainer;
-//	
-//  NSUInteger lineIndex = 0;
-//  NSInteger characterIndex = 0;
-//	NSUInteger glyphIndex = 0;
-//	NSUInteger glyphLength = [layoutManager glyphRangeForTextContainer:textContainer].length;
-//  float lineY;
-//  
-//  // are there any lines at all?
-//  if (glyphLength == 0) {
-//    NSRect extraFragmentRect = [layoutManager extraLineFragmentRect];
-//    if (NSHeight(extraFragmentRect) > 0.01 && NSMinY(extraFragmentRect) < NSMaxY(targetRect)) {
-//      [[DuxLineNumberString stringForNumber:1] drawAtY:NSMinY(extraFragmentRect)];
-//    }
-//    return;
-//  }
-//  
-//  // now we calculate the actual line positions  
-//  // figure out what line is the first one within targetRect
-//  characterIndex = [layoutManager characterIndexForPoint:targetRect.origin inTextContainer:textContainer fractionOfDistanceBetweenInsertionPoints:NULL];
-//  lineIndex = 1;
-//  while (lineIndex < 99999) {
-//    if (lineCharacterIndexes[lineIndex] >= characterIndex) {
-//      lineIndex--;
-//      break;
-//    }
-//    
-//    lineIndex++;
-//  }
-//  
-//  // draw the line numbers
-//	while (lineIndex < 99999) {
-//    if (lineCharacterIndexes[lineIndex] == NSNotFound)
-//      break;
-//    
-//    // find the glyph index forthe line
-//    glyphIndex = [layoutManager glyphIndexForCharacterAtIndex:lineCharacterIndexes[lineIndex]];
-//		if (glyphIndex >= glyphLength)
-//			break;
-//		
-//		// draw the line
-//		lineY = [layoutManager lineFragmentRectForGlyphAtIndex:glyphIndex effectiveRange:NULL].origin.y;
-//    [[DuxLineNumberString stringForNumber:lineIndex + 1] drawAtY:lineY];
-//		
-//    // are we done?
-//    if (lineY > NSMaxY(targetRect)) {
-//      break;
-//    }
-//    
-//		// move on
-//		lineIndex++;
-//	}
-//  
-//  // draw "extra" line fragment rect
-//  NSRect extraFragmentRect = [layoutManager extraLineFragmentRect];
-//  if (NSHeight(extraFragmentRect) > 0.01 && NSMinY(extraFragmentRect) < NSMaxY(targetRect)) {
-//    [[DuxLineNumberString stringForNumber:lineIndex + 1] drawAtY:NSMinY(extraFragmentRect)];
-//  }
-}
-
 - (void)editorFontDidChange:(NSNotification *)notif
 {
   NSLog(@"not yet implemented");
@@ -1566,17 +1389,6 @@ static NSCharacterSet *newlineCharacterSet;
 - (void)editorTabWidthDidChange:(NSNotification *)notif
 {
   NSLog(@"not yet implemented");
-}
-
-- (void)showLineNumbersDidChange:(NSNotification *)notif
-{
-  NSLog(@"not yet implemented");
-//  self.showLineNumbers = [DuxPreferences showLineNumbers];
-//  [(DuxTextContainer *)self.textContainer setLeftGutterWidth:self.showLineNumbers ? 34 : 0];
-//  
-//  [self.layoutManager invalidateLayoutForCharacterRange:NSMakeRange(0, self.string.length) actualCharacterRange:NULL];
-//	
-//  [self setNeedsDisplay:YES];
 }
 
 - (void)showPageGuideDidChange:(NSNotification *)notif
@@ -1632,7 +1444,7 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)breakUndoCoalescing
 {
-  NSLog(@"not yet implemented");
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 }
 
 - (NSString *)string

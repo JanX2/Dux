@@ -39,7 +39,7 @@
 @property (strong) IBOutlet NSPanel *goToLinePanel;
 @property (weak) IBOutlet NSSearchField *goToLineSearchField;
 
-- (id)initWithFrame:(NSRect)frameRect textContainer:(NSTextContainer *)container; // designated
+- (id)initWithFrame:(NSRect)frameRect storage:(DuxTextStorage *)storage; // designated
 
 - (void)initDuxTextView;
 
@@ -66,7 +66,6 @@
 - (void)selectionDidChange:(NSNotification *)notif;
 
 - (void)updateHighlightedElements;
-- (void)drawLineNumbersInRect:(NSRect)targetRect;
 
 - (BOOL)insertionPointInLeadingWhitespace;
 - (BOOL)tabShouldIndentWithCurrentSelectedRange;

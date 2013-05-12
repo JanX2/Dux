@@ -25,16 +25,9 @@
     self = [super init];
     if (self) {
       self.stringEncoding = NSUTF8StringEncoding;
-      textContentStorage = [[NSTextStorage alloc] initWithString:@"" attributes:@{NSFontAttributeName:[DuxPreferences editorFont]}];
+      textContentStorage = [[DuxTextStorage alloc] init];
       
-      NSLayoutManager *layoutManager = [[NSLayoutManager alloc] init];
-      NSTextContainer *textContainer = [[NSTextContainer alloc] initWithContainerSize:NSMakeSize(100, FLT_MAX)];
-      textContainer.widthTracksTextView = YES;
-      
-      [textContentStorage addLayoutManager:layoutManager];
-      [layoutManager addTextContainer:textContainer];
-      
-      self.textView = [[DuxTextView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100) textContainer:textContainer];
+      self.textView = [[DuxTextView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100) storage:textContentStorage];
       self.textView.autoresizingMask =    NSViewMinXMargin | NSViewWidthSizable | NSViewMaxXMargin | NSViewMinYMargin | NSViewHeightSizable | NSViewMaxYMargin;
 //      self.textView.minSize = NSMakeSize(0, 100);
 //      self.textView.maxSize = NSMakeSize(FLT_MAX, FLT_MAX);

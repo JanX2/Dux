@@ -12,11 +12,12 @@
 #import "DuxTextView.h"
 #import "DuxLanguageMenuItem.h"
 #import "DuxFileContentsWatcher.h"
+#import "DuxTextStorage.h"
 
 @class DuxProjectWindowController;
 
 @interface MyTextDocument : NSDocument <DuxFileContentsWatcherDelegate> {
-  NSTextStorage *textContentStorage;
+  DuxTextStorage *textContentStorage;
 }
 @property (unsafe_unretained) IBOutlet NSWindow *editorWindow;
 
