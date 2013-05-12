@@ -15,11 +15,11 @@
 {
   DuxTextStorage *storage = [[DuxTextStorage alloc] init];
   STAssertEqualObjects(@"", storage.string, nil);
-  STAssertEqualObjects(0, storage.length, nil);
+  STAssertEquals((NSUInteger)0, storage.length, nil);
   
   [storage replaceCharactersInRange:NSMakeRange(0, 0) withString:@"hello world"];
-  STAssertEqualObjects(@"hello world", storage.string, nil);
-  STAssertEqualObjects(@"hello world".length, storage.length, nil);
+  STAssertTrue([@"hello world" isEqualToString:storage.string], nil);
+  STAssertEquals(@"hello world".length, storage.length, nil);
 }
 
 @end

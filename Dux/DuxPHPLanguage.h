@@ -14,5 +14,9 @@
 @interface DuxPHPLanguage : DuxLanguage
 
 + (NSIndexSet *)keywordIndexSet;
++ (NSRange)keywordIndexRange;
++ (id)keywordIndexString;
+
+- (void)findKeywordsInString:(NSString *)string inRange:(NSRange)range;
 
 @end

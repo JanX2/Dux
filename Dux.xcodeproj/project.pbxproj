@@ -132,6 +132,11 @@
 		38CFEED51473AF5400F81E6F /* DuxPHPVariableElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 38CFEED41473AF5400F81E6F /* DuxPHPVariableElement.m */; };
 		38CFEED81473B1E000F81E6F /* DuxPHPKeywordElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 38CFEED71473B1E000F81E6F /* DuxPHPKeywordElement.m */; };
 		38D0A124173F63BD00309F2D /* DuxTexStorageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 38D0A123173F63BD00309F2D /* DuxTexStorageTests.m */; };
+		38D0A125173F677400309F2D /* DuxTextStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 3869817617292BE2004D0C4B /* DuxTextStorage.m */; };
+		38D0A126173F67A900309F2D /* DuxLine.m in Sources */ = {isa = PBXBuildFile; fileRef = 3869817417292BE2004D0C4B /* DuxLine.m */; };
+		38D0A127173F67B100309F2D /* DuxPlainTextLanguage.m in Sources */ = {isa = PBXBuildFile; fileRef = 3804A81A1478DA3E005C587A /* DuxPlainTextLanguage.m */; };
+		38D0A128173F67C200309F2D /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 38979ADD1729C8E100DA01EE /* QuartzCore.framework */; };
+		38D0A129173F67D300309F2D /* DuxPlainTextBaseElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 3804A81D1478DA7F005C587A /* DuxPlainTextBaseElement.m */; };
 		38D4B48E17209E6800B2EDEC /* Acknowledgements.xib in Resources */ = {isa = PBXBuildFile; fileRef = 38D4B48D17209E6800B2EDEC /* Acknowledgements.xib */; };
 		38D4B49117209FA300B2EDEC /* DuxAcknowledgementsController.m in Sources */ = {isa = PBXBuildFile; fileRef = 38D4B49017209FA300B2EDEC /* DuxAcknowledgementsController.m */; };
 		38D4B4931720A28D00B2EDEC /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 38D4B4921720A28D00B2EDEC /* Fonts */; };
@@ -425,6 +430,7 @@
 			files = (
 				386EC88A172A22B9000C7430 /* SenTestingKit.framework in Frameworks */,
 				386EC88B172A22B9000C7430 /* Cocoa.framework in Frameworks */,
+				38D0A128173F67C200309F2D /* QuartzCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1053,6 +1059,10 @@
 				389B0178172B2418003ADE63 /* DuxCSSColorValueElement.m in Sources */,
 				389B017C172B2513003ADE63 /* DuxCSSAtRuleElement.m in Sources */,
 				38D0A124173F63BD00309F2D /* DuxTexStorageTests.m in Sources */,
+				38D0A125173F677400309F2D /* DuxTextStorage.m in Sources */,
+				38D0A126173F67A900309F2D /* DuxLine.m in Sources */,
+				38D0A127173F67B100309F2D /* DuxPlainTextLanguage.m in Sources */,
+				38D0A129173F67D300309F2D /* DuxPlainTextBaseElement.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

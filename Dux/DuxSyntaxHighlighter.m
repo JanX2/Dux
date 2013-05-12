@@ -90,7 +90,7 @@ if ([DuxPreferences editorDarkMode]) {
   newlinePosition = [textStorage.string rangeOfCharacterFromSet:[NSCharacterSet newlineCharacterSet] options:NSLiteralSearch range:NSMakeRange(editedRange.location + editedRange.length, textStorage.length - (editedRange.location + editedRange.length))].location;
   if (newlinePosition == NSNotFound)
     newlinePosition = textStorage.length - 1;
-  minHighlightRange.length = newlinePosition - minHighlightRange.location;
+  minHighlightRange.length = newlinePosition - minHighlightRange.location + 1;
   
   // figure out where we are going to start from and what attributes are already there
   NSRange effectiveRange; // warning: we tell NSAttributedString not to search the entire string to calculate this, so only the location property is valid
@@ -131,7 +131,7 @@ if ([DuxPreferences editorDarkMode]) {
     DuxLanguageElement *thisElement = [elementStack lastObject];
     if (thisElement.language != thisLanguage) {
       thisLanguage = thisElement.language;
-      [thisLanguage prepareToParseTextStorage:textStorage];
+      [thisLanguage prepareToParseTextStorage:textStorage inRange:minHighlightRange];
     }
     
     // how long is this element, and what is the next one?

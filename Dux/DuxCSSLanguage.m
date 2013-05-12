@@ -24,7 +24,12 @@
 
 + (BOOL)isDefaultLanguageForURL:(NSURL *)URL textContents:(NSString *)textContents
 {
-  if (URL && [[URL pathExtension] isEqualToString:@"css"])
+  static NSArray *extensions = nil;
+  if (!extensions) {
+    extensions = @[@"css", @"less"];
+  }
+  
+  if (URL && [extensions containsObject:[URL pathExtension]])
     return YES;
   
   return NO;

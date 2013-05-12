@@ -53,9 +53,9 @@ static NSIndexSet *keywordIndexSet = nil;
   return keywordIndexSet;
 }
 
-- (void)prepareToParseTextStorage:(DuxTextStorage *)textStorage
+- (void)prepareToParseTextStorage:(DuxTextStorage *)textStorage inRange:(NSRange)range
 {
-  [super prepareToParseTextStorage:textStorage];
+  [super prepareToParseTextStorage:textStorage inRange:range];
   
   if (!keywordsExpression) {
     NSArray *keywords = [[NSArray alloc] initWithObjects:@"echo", @"printf", @"read", @"cd", @"pwd", @"pushd", @"popd", @"dirs", @"let", @"eval", @"set", @"unset", @"export", @"declare", @"typeset", @"readonly", @"getopts", @"source", @"exit", @"exec", @"shopt", @"caller", @"true", @"false", @"type", @"hash", @"bind", nil];
@@ -64,7 +64,7 @@ static NSIndexSet *keywordIndexSet = nil;
   }
   
   NSMutableIndexSet *keywordIndexesMutable = [[NSIndexSet indexSet] mutableCopy];
-  [keywordsExpression enumerateMatchesInString:textStorage.string options:0 range:NSMakeRange(0, textStorage.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop){
+  [keywordsExpression enumerateMatchesInString:textStorage.string options:0 range:range usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop){
     [keywordIndexesMutable addIndexesInRange:match.range];
   }];
   

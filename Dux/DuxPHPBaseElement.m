@@ -105,8 +105,23 @@ static DuxPHPBlockCommentElement *blockCommentElement;
   }
   
   // search for the next keyword
+  BOOL needKeywordSearch = NO;
+  if (string != [DuxPHPLanguage keywordIndexString])
+    needKeywordSearch = YES;
+  if (!NSLocationInRange(startingAt, [DuxPHPLanguage keywordIndexRange]))
+    needKeywordSearch = YES;
+  if (foundCharacterSetRange.location != NSNotFound && !NSLocationInRange(foundCharacterSetRange.location, [DuxPHPLanguage keywordIndexRange]))
+    needKeywordSearch = YES;
+  if (foundCharacterSetRange.location == NSNotFound && !NSLocationInRange(string.length - 1, [DuxPHPLanguage keywordIndexRange]))
+    needKeywordSearch = YES;
+  if (needKeywordSearch) {
+    id keywordString = string;
+    if ([keywordString isKindOfClass:[NSAttributedString class]])
+      keywordString = [keywordString string];
+    [[DuxPHPLanguage sharedInstance] findKeywordsInString:keywordString inRange:NSMakeRange(startingAt, MIN(string.length, startingAt + 10000) - startingAt)];
+  }
+  
   NSRange foundKeywordRange = NSMakeRange(NSNotFound, 0);
-
   NSIndexSet *keywordIndexes = [DuxPHPLanguage keywordIndexSet];
   if (keywordIndexes) {
     NSUInteger foundKeywordMax = (foundCharacterSetRange.location == NSNotFound) ? string.length : foundCharacterSetRange.location;

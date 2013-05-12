@@ -67,14 +67,7 @@ static NSCharacterSet *newlineCharacterSet;
   self.layer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
   [self.layer setNeedsDisplay];
 //  self.layer.sublayerTransform = CATransform3DMakeScale(1.0f, -1.0f, 1.0f);
-  
-  
-if ([DuxPreferences editorDarkMode]) {
-  self.insertionPointColor = [NSColor colorWithCalibratedWhite:1 alpha:1];
-} else {
-  self.insertionPointColor = [NSColor colorWithCalibratedWhite:0 alpha:1];
-}
-  
+    
   self.showLineNumbers = [DuxPreferences showLineNumbers];
   self.showPageGuide = [DuxPreferences showPageGuide];
   self.pageGuidePosition = [DuxPreferences pageGuidePosition];
@@ -469,6 +462,11 @@ if ([DuxPreferences editorDarkMode]) {
 //  [self setSelectedRanges:selectedRanges];
 }
 
+- (void)setSelectedRanges:(NSArray *)ranges affinity:(NSSelectionAffinity)affinity stillSelecting:(BOOL)stillSelectingFlag
+{
+  NSLog(@"not yet implemented");
+}
+
 - (NSArray *)completionsForPartialWordRange:(NSRange)charRange indexOfSelectedItem:(NSInteger *)index
 {
   NSLog(@"not yet implemented");
@@ -540,6 +538,11 @@ if ([DuxPreferences editorDarkMode]) {
   [self breakUndoCoalescing];
   [self insertText:pasteString];
   [self breakUndoCoalescing];
+}
+
+- (void)insertText:(id)insertString
+{
+  NSLog(@"not yet implemented");
 }
 
 - (void)insertSnippet:(NSString *)snippet
@@ -1467,103 +1470,6 @@ if ([DuxPreferences editorDarkMode]) {
 //      [self setNeedsDisplay:YES];
 //    }
 //  });
-}
-
-- (void)processLines
-{
-  NSLog(@"not yet implemented");
-//  NSString *string = self.string;
-//  if (lastProcessLinesStringHash == string.hash)
-//    return;
-//  
-//  NSUInteger stringLength = string.length;
-//  NSUInteger characterIndex = 0;
-//  NSUInteger lineIndex = 0;
-//  
-//  if (stringLength == 0) {
-//    while (lineIndex < 99999) {
-//      if (characterIndex >= stringLength) {
-//        lineCharacterIndexes[lineIndex] = NSNotFound;
-//        lineIndex++;
-//        continue;
-//      }
-//    }
-//    return;
-//  }
-//  
-//  NSTextStorage *textStorage = self.textStorage;
-//  BOOL didBeginEditingTextStorage = NO;
-//  
-//  NSMutableParagraphStyle *paragraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
-//  [paragraphStyle setTabStops:[NSArray array]];
-//  [paragraphStyle setAlignment:NSLeftTextAlignment];
-//  [paragraphStyle setBaseWritingDirection:NSWritingDirectionLeftToRight];
-//  [paragraphStyle setLineBreakMode:NSLineBreakByWordWrapping];
-//  
-//  float spaceWidth = [@" " sizeWithAttributes:[textStorage attributesAtIndex:0 effectiveRange:NULL]].width;
-//  [paragraphStyle setDefaultTabInterval:spaceWidth * [DuxPreferences tabWidth]];
-//  float headIndentWidth = spaceWidth * ([DuxPreferences tabWidth] * 2);
-//  
-//  NSUInteger whitespaceCount;
-//  NSNumber *oldWhitespaceCount;
-//  
-//  while (lineIndex < 99999) {
-//    if (characterIndex >= stringLength) {
-//      lineCharacterIndexes[lineIndex] = NSNotFound;
-//      lineIndex++;
-//      continue;
-//    }
-//    
-//    // are we in between a CR and LF character? (windows newlines)
-//    if (characterIndex > 0 && [string characterAtIndex:characterIndex - 1] == '\r' && [string characterAtIndex:characterIndex] == '\n') {
-//      characterIndex++;
-//    }
-//    
-//    // record line range
-//    NSRange lineRange = NSMakeRange(characterIndex, [string endOfLineAtOffset:characterIndex] - characterIndex);
-//    lineCharacterIndexes[lineIndex] = lineRange.location;
-//    
-//    // count number of spaces in leading whitespace
-//    if (lineRange.length > 0) {
-//      whitespaceCount = 0;
-//      for (characterIndex = lineRange.location; characterIndex < NSMaxRange(lineRange); characterIndex++) {
-//        switch ([string characterAtIndex:characterIndex]) {
-//          case ' ':
-//            whitespaceCount++;
-//            break;
-//          case '\t':
-//            whitespaceCount++;
-//            while (whitespaceCount % [DuxPreferences tabWidth] != 0) {
-//              whitespaceCount++;
-//            }
-//            break;
-//          default: // found a non-whitespace char
-//            characterIndex = NSMaxRange(lineRange);
-//        }
-//      }
-//      
-//      // if it isn't already correct, update head intent to match whitespace
-//      oldWhitespaceCount = [textStorage attribute:@"DuxEditorLeadingWhitespaceCount" atIndex:lineRange.location effectiveRange:0];
-//      if (!oldWhitespaceCount || [oldWhitespaceCount integerValue] != whitespaceCount) {
-//        if (!didBeginEditingTextStorage) {
-//          didBeginEditingTextStorage = YES;
-//          [textStorage beginEditing];
-//        }
-//        
-//        [textStorage addAttribute:@"DuxEditorLeadingWhitespaceCount" value:[NSNumber numberWithInteger:whitespaceCount] range:lineRange];
-//        [paragraphStyle setHeadIndent:headIndentWidth + (whitespaceCount * spaceWidth)];
-//        [textStorage addAttribute:NSParagraphStyleAttributeName value:[paragraphStyle copy] range:lineRange];
-//      }
-//    }
-//    
-//    characterIndex = NSMaxRange(lineRange) + 1;
-//    lineIndex++;
-//  }
-//  if (didBeginEditingTextStorage) {
-//    [textStorage endEditing];
-//  }
-//  
-//  lastProcessLinesStringHash = string.hash;  
 }
 
 - (void)drawLineNumbersInRect:(NSRect)targetRect

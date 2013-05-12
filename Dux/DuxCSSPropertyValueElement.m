@@ -54,7 +54,7 @@ static DuxCSSColorValueElement *colorValueElement;
     characterFound = [string characterAtIndex:foundCharacterSetRange.location];
     if (string.length > (foundCharacterSetRange.location + 1) && characterFound == '/') {
       characterFound = [string characterAtIndex:foundCharacterSetRange.location + 1];
-      if (characterFound != '/' && characterFound != '*') {
+      if (characterFound != '*') {
         searchStartLocation++;
         continue;
       }

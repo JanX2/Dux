@@ -90,7 +90,7 @@ static NSCharacterSet *newlineCharacters;
   DuxLine *line;
   NSMutableArray *elementStack = @[language.baseElement].mutableCopy;
   [lineNumbers setCount:0];
-  [language prepareToParseTextStorage:self];
+  [language prepareToParseTextStorage:self inRange:NSMakeRange(0, self.length)];
   while (true) {
     index++;
     
