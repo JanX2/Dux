@@ -657,6 +657,12 @@ if ([DuxPreferences editorDarkMode]) {
         [self moveForward:self];
       }
       return;
+    case NSUpArrowFunctionKey:
+      [self moveUp:self];
+      return;
+    case NSDownArrowFunctionKey:
+      [self moveDown:self];
+      return;
     case NSDeleteCharacter: // "delete" on mac keyboards, but "backspace" on others
       if (([theEvent modifierFlags] & NSControlKeyMask)) {
         [self deleteSubwordBackward:self];
@@ -864,6 +870,58 @@ if ([DuxPreferences editorDarkMode]) {
   
   self.insertionPointOffset = self.insertionPointOffset + 1;
   
+  [self updateInsertionPointLayer];
+}
+
+- (void)moveUp:(id)sender
+{
+  DuxLine *currentLine = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
+  if (currentLine.range.location == 0){
+    [self moveToBeginningOfLine:sender];
+    return;
+  }
+  
+  DuxLine *newLine = [self.storage lineAtCharacterPosition:currentLine.range.location - 1];
+  
+  NSUInteger columnIndex = self.insertionPointOffset - currentLine.range.location;
+  if (columnIndex > newLine.range.length)
+    columnIndex = newLine.range.length;
+  
+  self.insertionPointOffset = newLine.range.location + columnIndex;
+  [self updateInsertionPointLayer];
+}
+
+- (void)moveDown:(id)sender
+{
+  DuxLine *currentLine = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
+  if (NSMaxRange(currentLine.range) == self.storage.length){
+    [self moveToEndOfLine:sender];
+    return;
+  }
+  
+  DuxLine *newLine = [self.storage lineAtCharacterPosition:NSMaxRange(currentLine.range) + 1];
+  
+  NSUInteger columnIndex = self.insertionPointOffset - currentLine.range.location;
+  if (columnIndex > newLine.range.length)
+    columnIndex = newLine.range.length;
+  
+  self.insertionPointOffset = newLine.range.location + columnIndex;
+  [self updateInsertionPointLayer];
+}
+
+- (void)moveToBeginningOfLine:(id)sender
+{
+  DuxLine *line = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
+  
+  self.insertionPointOffset = line.range.location;
+  [self updateInsertionPointLayer];
+}
+
+- (void)moveToEndOfLine:(id)sender
+{
+  DuxLine *line = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
+  
+  self.insertionPointOffset = NSMaxRange(line.range);
   [self updateInsertionPointLayer];
 }
 
