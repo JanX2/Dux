@@ -859,7 +859,7 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (void)moveForward:(id)sender
 {
-  if (self.insertionPointOffset == self.storage.string.length - 1)
+  if (self.insertionPointOffset == self.storage.string.length)
     return;
   
   self.insertionPointOffset = self.insertionPointOffset + 1;
