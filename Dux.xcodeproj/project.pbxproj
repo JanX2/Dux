@@ -131,6 +131,7 @@
 		38CFEED21473AF4200F81E6F /* DuxPHPNumberElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 38CFEED11473AF4200F81E6F /* DuxPHPNumberElement.m */; };
 		38CFEED51473AF5400F81E6F /* DuxPHPVariableElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 38CFEED41473AF5400F81E6F /* DuxPHPVariableElement.m */; };
 		38CFEED81473B1E000F81E6F /* DuxPHPKeywordElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 38CFEED71473B1E000F81E6F /* DuxPHPKeywordElement.m */; };
+		38D0A124173F63BD00309F2D /* DuxTexStorageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 38D0A123173F63BD00309F2D /* DuxTexStorageTests.m */; };
 		38D4B48E17209E6800B2EDEC /* Acknowledgements.xib in Resources */ = {isa = PBXBuildFile; fileRef = 38D4B48D17209E6800B2EDEC /* Acknowledgements.xib */; };
 		38D4B49117209FA300B2EDEC /* DuxAcknowledgementsController.m in Sources */ = {isa = PBXBuildFile; fileRef = 38D4B49017209FA300B2EDEC /* DuxAcknowledgementsController.m */; };
 		38D4B4931720A28D00B2EDEC /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 38D4B4921720A28D00B2EDEC /* Fonts */; };
@@ -346,6 +347,8 @@
 		38CFEED41473AF5400F81E6F /* DuxPHPVariableElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = DuxPHPVariableElement.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		38CFEED61473B1DF00F81E6F /* DuxPHPKeywordElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxPHPKeywordElement.h; sourceTree = "<group>"; };
 		38CFEED71473B1E000F81E6F /* DuxPHPKeywordElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = DuxPHPKeywordElement.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
+		38D0A122173F63BD00309F2D /* DuxTexStorageTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DuxTexStorageTests.h; path = ../Dux/DuxTexStorageTests.h; sourceTree = "<group>"; };
+		38D0A123173F63BD00309F2D /* DuxTexStorageTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = DuxTexStorageTests.m; path = ../Dux/DuxTexStorageTests.m; sourceTree = "<group>"; };
 		38D4B48D17209E6800B2EDEC /* Acknowledgements.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Acknowledgements.xib; sourceTree = "<group>"; };
 		38D4B48F17209FA300B2EDEC /* DuxAcknowledgementsController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxAcknowledgementsController.h; sourceTree = "<group>"; };
 		38D4B49017209FA300B2EDEC /* DuxAcknowledgementsController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxAcknowledgementsController.m; sourceTree = "<group>"; };
@@ -545,6 +548,8 @@
 			children = (
 				386EC892172A22B9000C7430 /* DuxSyntaxHighlighterTests.h */,
 				386EC893172A22B9000C7430 /* DuxSyntaxHighlighterTests.m */,
+				38D0A122173F63BD00309F2D /* DuxTexStorageTests.h */,
+				38D0A123173F63BD00309F2D /* DuxTexStorageTests.m */,
 				386EC88D172A22B9000C7430 /* Supporting Files */,
 			);
 			path = DuxSyntaxHighlighterTests;
@@ -1047,6 +1052,7 @@
 				389B0177172B2418003ADE63 /* DuxCSSNumberValueElement.m in Sources */,
 				389B0178172B2418003ADE63 /* DuxCSSColorValueElement.m in Sources */,
 				389B017C172B2513003ADE63 /* DuxCSSAtRuleElement.m in Sources */,
+				38D0A124173F63BD00309F2D /* DuxTexStorageTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
