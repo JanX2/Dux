@@ -94,7 +94,6 @@ static NSCharacterSet *newlineCharacters;
   } else if (lineStart > contents.length) {
     lineStart = contents.length;
   }
-  [language prepareToParseTextStorage:self inRange:NSMakeRange(0, contents.length)];
   
   // add a couple extra characters to maxPosition, to allow a buffer for newline characters
   maxPosition = MIN(maxPosition + 2, contents.length);
@@ -106,7 +105,9 @@ static NSCharacterSet *newlineCharacters;
     if (lineEnd == NSNotFound)
       lineEnd = contents.length == 0 ? 0 : contents.length;
     
-    line = [[DuxLine alloc] initWithStorage:self range:NSMakeRange(lineStart, lineEnd - lineStart) lineNumber:findLinesLineCount workingElementStack:languageElementStack];
+    NSRange lineRange = NSMakeRange(lineStart, lineEnd - lineStart);
+    [language prepareToParseTextStorage:self inRange:lineRange];
+    line = [[DuxLine alloc] initWithStorage:self range:lineRange lineNumber:findLinesLineCount workingElementStack:languageElementStack];
     
     [lines setCount:lineStart + 1];
     [lines insertPointer:(void *)line atIndex:lineStart];
