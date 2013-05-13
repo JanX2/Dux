@@ -18,7 +18,7 @@ static NSDictionary *lineNumberAttributes;
 
 @property (weak) DuxTextStorage *storage;
 @property NSRange range;
-@property NSString *lineNumber;
+@property NSUInteger lineNumber;
 
 @property NSArray *elements;
 
@@ -52,7 +52,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   });
 }
 
-- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSString *)lineNumber workingElementStack:(NSMutableArray *)elementStack
+- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSUInteger)lineNumber workingElementStack:(NSMutableArray *)elementStack
 {
   if (!(self = [super init]))
     return nil;
@@ -74,7 +74,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   NSUInteger maxRange = NSMaxRange(range);
   
   NSMutableArray *mutableElements = [[NSMutableArray alloc] init];
-  while (true) {
+  while (elementStart < maxRange) {
     nextElement = nil;
     NSUInteger elementLength = [element lengthInString:storage.string startingAt:elementStart didJustPop:didJustPop nextElement:&nextElement];
     
@@ -107,8 +107,6 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     }
     
     elementStart = elementStart + elementLength;
-    if (elementStart >= maxRange)
-      break;
   }
   self.elements = mutableElements.copy;
   
@@ -220,8 +218,8 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   CFRelease(path);
   
   // draw line number
-  if (self.lineNumber) {
-    NSAttributedString *lineNumberString = [[NSAttributedString alloc] initWithString:self.lineNumber attributes:lineNumberAttributes]; // empty line has zero height, so we force a space
+  if (self.lineNumber != NSUIntegerMax) {
+    NSAttributedString *lineNumberString = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%lu", self.lineNumber] attributes:lineNumberAttributes]; // empty line has zero height, so we force a space
     framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)lineNumberString);
     
     lineRect.origin.x = 0;

@@ -29,7 +29,8 @@ static NSCharacterSet *newlineCharacters;
     return nil;
   
   contents = [[NSMutableString alloc] init];
-  lineNumbers = [NSPointerArray strongObjectsPointerArray];
+  lines = [NSPointerArray strongObjectsPointerArray];
+  unsafeLinesOffset = 0;
   
   NSMutableParagraphStyle *paragraphStyle = [NSParagraphStyle defaultParagraphStyle].mutableCopy;
   paragraphStyle.tabStops = @[];
@@ -41,8 +42,6 @@ static NSCharacterSet *newlineCharacters;
   textAttributes = @{NSFontAttributeName: [NSFont fontWithName:@"Source Code Pro" size:13], NSParagraphStyleAttributeName:paragraphStyle.copy, NSForegroundColorAttributeName: (id)[[NSColor blackColor] CGColor]};
   
   language = [DuxPlainTextLanguage sharedInstance];
-  
-  [self findLines];
   
   return self;
 }
@@ -61,7 +60,9 @@ static NSCharacterSet *newlineCharacters;
 {
   contents = string.mutableCopy;
   
-  [self findLines];
+  [lines setCount:0];
+  [lines compact];
+  unsafeLinesOffset = 0;
 }
 
 - (DuxLanguage *)language
@@ -82,26 +83,33 @@ static NSCharacterSet *newlineCharacters;
   return textAttributes;
 }
 
-- (void)findLines
+- (void)findLinesUpToPosition:(NSUInteger)maxPosition
 {
-  NSUInteger index = 0;
-  NSUInteger lineStart = 0;
-  NSUInteger lineEnd = 0;
+  NSUInteger lineStart = unsafeLinesOffset;
+  NSUInteger lineEnd;
   DuxLine *line;
-  NSMutableArray *elementStack = @[language.baseElement].mutableCopy;
-  [lineNumbers setCount:0];
-  [language prepareToParseTextStorage:self inRange:NSMakeRange(0, self.length)];
+  if (lineStart == 0) {
+    findLinesLineCount = 0;
+    languageElementStack = @[language.baseElement].mutableCopy;
+  } else if (lineStart > contents.length) {
+    lineStart = contents.length;
+  }
+  [language prepareToParseTextStorage:self inRange:NSMakeRange(0, contents.length)];
+  
+  // add a couple extra characters to maxPosition, to allow a buffer for newline characters
+  maxPosition = MIN(maxPosition + 2, contents.length);
+  
   while (true) {
-    index++;
+    findLinesLineCount++;
     
     lineEnd = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch range:NSMakeRange(lineStart, contents.length - lineStart)].location;
     if (lineEnd == NSNotFound)
       lineEnd = contents.length == 0 ? 0 : contents.length;
     
-    line = [[DuxLine alloc] initWithStorage:self range:NSMakeRange(lineStart, lineEnd - lineStart) lineNumber:[NSString stringWithFormat:@"%lu", (unsigned long)index] workingElementStack:elementStack];
+    line = [[DuxLine alloc] initWithStorage:self range:NSMakeRange(lineStart, lineEnd - lineStart) lineNumber:findLinesLineCount workingElementStack:languageElementStack];
     
-    [lineNumbers setCount:lineStart + 1];
-    [lineNumbers insertPointer:(void *)line atIndex:lineStart];
+    [lines setCount:lineStart + 1];
+    [lines insertPointer:(void *)line atIndex:lineStart];
     
     // is it a windows newline?
     BOOL isWindowsNewline = NO;
@@ -114,16 +122,22 @@ static NSCharacterSet *newlineCharacters;
     }
     
     lineStart = lineEnd + (isWindowsNewline ? 2 : 1);
-    if (lineStart > contents.length)
+    unsafeLinesOffset = lineStart;
+    if (lineStart > maxPosition)
       break;
   }
 }
 
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string
 {
+  DuxLine *line = [self lineAtCharacterPosition:range.location];
+  
   [contents replaceCharactersInRange:range withString:string];
   
-  [self findLines];
+  [lines setCount:range.location];
+  [lines compact];
+  unsafeLinesOffset = line.range.location;
+  findLinesLineCount = line.lineNumber - 1;
 }
 
 - (BOOL)positionSplitsWindowsNewline:(NSUInteger)characterPosition
@@ -148,8 +162,12 @@ static NSCharacterSet *newlineCharacters;
   if (characterPosition > self.string.length)
     return nil;
   
+  if (unsafeLinesOffset <= characterPosition || lines.count <= characterPosition) {
+    [self findLinesUpToPosition:characterPosition];
+  }
+  
   if (characterPosition == 0)
-    return [lineNumbers pointerAtIndex:0];
+    return [lines pointerAtIndex:0];
   
   // are we in the middle of a windows newline?
   if ([self positionSplitsWindowsNewline:characterPosition]) {
@@ -163,7 +181,7 @@ static NSCharacterSet *newlineCharacters;
   else
     lineStart = lineStartRange.location + lineStartRange.length;
   
-  return [lineNumbers pointerAtIndex:lineStart];
+  return [lines pointerAtIndex:lineStart];
 }
 
 - (DuxLine *)lineBeforeLine:(DuxLine *)line

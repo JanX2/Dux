@@ -12,10 +12,11 @@
 
 @interface DuxLine : CALayer
 
-- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSString *)lineNumber workingElementStack:(NSMutableArray *)elementStack;
+- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSUInteger)lineNumber workingElementStack:(NSMutableArray *)elementStack;
 
 @property (readonly, weak) DuxTextStorage *storage;
 @property (readonly) NSRange range;
+@property (readonly) NSUInteger lineNumber;
 
 - (CGFloat)heightWithWidth:(CGFloat)width;
 - (CGPoint)pointForCharacterOffset:(NSUInteger)characterOffset; // relative to entire storage, not just this line range

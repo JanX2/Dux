@@ -1404,13 +1404,9 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (BOOL)becomeFirstResponder
 {
-  BOOL accept = [super becomeFirstResponder];
-
-  if (accept) {
-    self.backgroundColor = [NSColor duxEditorColor];
-  }
+  self.backgroundColor = [NSColor duxEditorColor];
   
-  return accept;
+  return YES;
 }
 
 - (BOOL)resignFirstResponder
