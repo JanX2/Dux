@@ -110,10 +110,33 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   }
   self.elements = mutableElements.copy;
   
+  [self createStringToDraw];
+  framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
+  
   return self;
 }
 
-- (NSAttributedString *)stringToDrawWithSyntaxAttributes:(BOOL)withSyntax
+- (void)dealloc
+{
+  free(lineOrigins);
+}
+
+- (void)setFrame:(CGRect)frame
+{
+  [super setFrame:frame];
+  
+  contentPath = CGPathCreateWithRect(CGRectMake(self.bounds.origin.x + DUX_LINE_NUMBER_WIDTH, 0, self.bounds.size.width - DUX_LINE_NUMBER_WIDTH, self.bounds.size.height), NULL);
+  contentFrame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), contentPath, NULL);
+  
+  lines = CTFrameGetLines(contentFrame);
+  lineCount = CFArrayGetCount(lines);
+  
+  free(lineOrigins);
+  lineOrigins = malloc(sizeof(CGPoint) * lineCount);
+  CTFrameGetLineOrigins(contentFrame, CFRangeMake(0, 0), lineOrigins);
+}
+
+- (void)createStringToDraw
 {
   NSUInteger whitespaceEnd = [self.storage.string rangeOfCharacterFromSet:nonWhitespaceCharacterSet options:NSLiteralSearch range:self.range].location;
   CGFloat headIndent = 28; // default
@@ -132,7 +155,6 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     [attributes setObject:paragraphStyle forKey:NSParagraphStyleAttributeName];
   }
   
-  NSMutableAttributedString *stringToDraw;
   if (self.range.length > 0) {
     stringToDraw = [[NSMutableAttributedString alloc] initWithString:[self.storage.string substringWithRange:self.range] attributes:attributes];
   } else {
@@ -146,15 +168,10 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     //    NSLog(@"%@ %@ %@", [[elementRecord valueForKey:@"element"] color], [elementRecord valueForKey:@"start"], [elementRecord valueForKey:@"length"]);
     [stringToDraw addAttribute:NSForegroundColorAttributeName value:(id)[[elementRecord valueForKey:@"element"] color].CGColor range:NSMakeRange([[elementRecord valueForKey:@"start"] unsignedIntegerValue], [[elementRecord valueForKey:@"length"] unsignedIntegerValue])];
   }
-  
-  return stringToDraw;
 }
 
 - (CGFloat)heightWithWidth:(CGFloat)width
 {
-  NSAttributedString *stringToDraw = [self stringToDrawWithSyntaxAttributes:NO];
-  
-  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
   CGSize lineSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(width - DUX_LINE_NUMBER_WIDTH, CGFLOAT_MAX), NULL);
   
   return lineSize.height;
@@ -167,16 +184,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   
   NSUInteger adjustedOffset = characterOffset - self.range.location;
   
-  NSAttributedString *stringToDraw = [self stringToDrawWithSyntaxAttributes:NO];
-  
-  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
-  
-  CGMutablePathRef path = CGPathCreateMutable();
-	CGPathAddRect(path, NULL, CGRectMake(self.bounds.origin.x + DUX_LINE_NUMBER_WIDTH, 0, self.bounds.size.width - DUX_LINE_NUMBER_WIDTH, self.bounds.size.height));
-  CTFrameRef ctframe = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
-  
-  CFArrayRef lines = CTFrameGetLines(ctframe);
-  CFIndex lineIndex, lineCount = CFArrayGetCount(lines);
+  CFIndex lineIndex;
   for (lineIndex = 0; lineIndex < lineCount; lineIndex++) {
     CTLineRef line = CFArrayGetValueAtIndex(lines, lineIndex);
     CFRange lineRange = CTLineGetStringRange(line);
@@ -190,22 +198,10 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
 
 - (NSUInteger)characterOffsetForPoint:(CGPoint)point
 {
-  NSAttributedString *stringToDraw = [self stringToDrawWithSyntaxAttributes:NO];
-  
-  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
-  
-  CGMutablePathRef path = CGPathCreateMutable();
-	CGPathAddRect(path, NULL, CGRectMake(self.bounds.origin.x + DUX_LINE_NUMBER_WIDTH, 0, self.bounds.size.width - DUX_LINE_NUMBER_WIDTH, self.bounds.size.height));
-  CTFrameRef ctframe = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
-  
-  CFArrayRef lines = CTFrameGetLines(ctframe);
-  CFIndex lineIndex, lineCount = CFArrayGetCount(lines);
-  CGPoint lineOrigins[lineCount];
-  CTFrameGetLineOrigins(ctframe, CFRangeMake(0, 0), lineOrigins);
-  
+  CFIndex lineIndex;
   for (lineIndex = 0; lineIndex < lineCount; lineIndex++) {
     CGPoint lineOrigin = lineOrigins[lineIndex];
-    if (lineOrigin.y > point.y) {
+    if ((lineOrigin.y - 4) > point.y) {
       continue;
     }
     
@@ -213,7 +209,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     
     CGPoint linePoint = point;
     linePoint.x -= lineOrigin.x + DUX_LINE_NUMBER_WIDTH;
-    linePoint.y -= lineOrigin.y;
+    linePoint.y = 0; // we already decided we want this line, only care about x coord
     
     CFIndex lineCharIndex = CTLineGetStringIndexForPosition(line, linePoint);
     return self.range.location + lineCharIndex;
@@ -236,33 +232,26 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   // calculate head indent
   
   
-  // load attributed string
-  NSAttributedString *stringToDraw = [self stringToDrawWithSyntaxAttributes:YES];
-  
   //Create Frame
-  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
   CGFloat lineHeight = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(lineWidth - DUX_LINE_NUMBER_WIDTH, CGFLOAT_MAX), NULL).height;
   CGRect lineRect = (CGRect){{DUX_LINE_NUMBER_WIDTH, 0}, {lineWidth - DUX_LINE_NUMBER_WIDTH, lineHeight}};
   lineRect.origin.y = self.frame.size.height - lineRect.size.height;
   
   //Draw Frame
-  CGPathRef path = CGPathCreateWithRect(lineRect, NULL);
-  CTFrameRef frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
-  CTFrameDraw(frame, context);
-  CFRelease(path);
+  CTFrameDraw(contentFrame, context);
   
   // draw line number
   if (self.lineNumber != NSUIntegerMax) {
     NSAttributedString *lineNumberString = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%lu", self.lineNumber] attributes:lineNumberAttributes]; // empty line has zero height, so we force a space
-    framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)lineNumberString);
+    CTFramesetterRef lineNumberFramesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)lineNumberString);
     
     lineRect.origin.x = 0;
     lineRect.origin.y -= 2;
     lineRect.size.width = DUX_LINE_NUMBER_WIDTH - 10;
-    path = CGPathCreateWithRect(lineRect, NULL);
-    frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
-    CTFrameDraw(frame, context);
-    CFRelease(path);
+    CGPathRef lineNumberPath = CGPathCreateWithRect(lineRect, NULL);
+    CTFrameRef lineNumberFrame = CTFramesetterCreateFrame(lineNumberFramesetter, CFRangeMake(0, 0), lineNumberPath, NULL);
+    CTFrameDraw(lineNumberFrame, context);
+    CFRelease(lineNumberPath);
   }
   
   // move to next line
