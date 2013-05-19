@@ -23,6 +23,8 @@ static CGFloat rightGutter = 4;
 @interface DuxTextView()
 
 @property CALayer *insertionPointLayer;
+@property CAKeyframeAnimation *insertionPointBlinkAnimation;
+@property NSDate *dateToResumeInsertionPointBlinking;
 
 @end
 
@@ -560,6 +562,7 @@ static NSCharacterSet *newlineCharacterSet;
   [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset, 0) withString:string];
   [self updateLayer];
   
+  [self pauseInsertionPointBlinking];
   self.insertionPointOffset = self.insertionPointOffset + string.length;
 }
 
@@ -880,6 +883,7 @@ static NSCharacterSet *newlineCharacterSet;
   if ([self.storage positionSplitsWindowsNewline:newOffset])
     newOffset--;
   
+  [self pauseInsertionPointBlinking];
   self.insertionPointOffset = newOffset;
 }
 
@@ -888,6 +892,7 @@ static NSCharacterSet *newlineCharacterSet;
   if (self.insertionPointOffset == self.storage.string.length)
     return;
   
+  [self pauseInsertionPointBlinking];
   self.insertionPointOffset = self.insertionPointOffset + 1;
 }
 
@@ -905,6 +910,7 @@ static NSCharacterSet *newlineCharacterSet;
   if (columnIndex > newLine.range.length)
     columnIndex = newLine.range.length;
   
+  [self pauseInsertionPointBlinking];
   self.insertionPointOffset = newLine.range.location + columnIndex;
 }
 
@@ -914,6 +920,7 @@ static NSCharacterSet *newlineCharacterSet;
   DuxLine *newLine = [self.storage lineAfterLine:currentLine];
   
   if (!newLine){
+    [self pauseInsertionPointBlinking];
     self.insertionPointOffset = self.storage.length;
     return;
   }
@@ -922,6 +929,7 @@ static NSCharacterSet *newlineCharacterSet;
   if (columnIndex > newLine.range.length)
     columnIndex = newLine.range.length;
   
+  [self pauseInsertionPointBlinking];
   self.insertionPointOffset = newLine.range.location + columnIndex;
 }
 
@@ -929,6 +937,7 @@ static NSCharacterSet *newlineCharacterSet;
 {
   DuxLine *line = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
   
+  [self pauseInsertionPointBlinking];
   self.insertionPointOffset = line.range.location;
   [self updateInsertionPointLayer];
 }
@@ -937,6 +946,7 @@ static NSCharacterSet *newlineCharacterSet;
 {
   DuxLine *line = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
   
+  [self pauseInsertionPointBlinking];
   self.insertionPointOffset = NSMaxRange(line.range);
 }
 
@@ -1101,7 +1111,6 @@ static NSCharacterSet *newlineCharacterSet;
   if (!line)
     return self.storage.string.length; // reached the end of the file
   
-  NSLog(@"%@", line);
   return [line characterOffsetForPoint:CGPointMake(point.x - line.frame.origin.x, point.y - line.frame.origin.y)];
   
   return 0;
@@ -1191,33 +1200,16 @@ static NSCharacterSet *newlineCharacterSet;
     self.insertionPointLayer.opacity = 0;
     [self.layer addSublayer:self.insertionPointLayer];
     
-    CAKeyframeAnimation* anim = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
-    anim.values = @[@0.2, @1.0, @0.8, @0.8, @0.2];     // opacity at each keyframe
-    anim.keyTimes = @[@0.0, @0.15, @0.4, @0.6, @1.0];  // percentage through the animation for each keyframe
-    anim.duration = 0.9;
-    //    anim.timingFunctions = @[[CAValueFunction functionWithName: kCAMediaTimingFunctionEaseIn], [CAValueFunction functionWithName: kCAMediaTimingFunctionEaseOut], [CAValueFunction functionWithName: kCAMediaTimingFunctionEaseIn]];
-    anim.repeatCount = HUGE_VALF;
-    [self.insertionPointLayer addAnimation:anim forKey:nil];
-    
-    //    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"opacity"];
-    //    [animation setFromValue:[NSNumber numberWithFloat:1.0]];
-    //    [animation setToValue:[NSNumber numberWithFloat:0.3]];
-    //    [animation setDuration:0.5f];
-    //    [animation setTimingFunction:[CAMediaTimingFunction
-    //                                  functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
-    //    [animation setAutoreverses:YES];
-    //    [animation setRepeatCount:20000];
-    //    [self.insertionPointLayer addAnimation:animation forKey:@"opacity"];
+    self.insertionPointBlinkAnimation = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
+    self.insertionPointBlinkAnimation.values = @[@1.0, @0.8, @0.8, @0.2, @1.0];     // opacity at each keyframe
+    self.insertionPointBlinkAnimation.keyTimes = @[@0.0, @0.2, @0.4, @0.9, @1.0];  // percentage through the animation for each keyframe
+    self.insertionPointBlinkAnimation.duration = 1;
+    self.insertionPointBlinkAnimation.repeatCount = HUGE_VALF;
+    [self.insertionPointLayer addAnimation:self.insertionPointBlinkAnimation forKey:@"opacity"];
   } else {
     CGPoint origPoint = self.insertionPointLayer.position;
     CGPoint destPoint = CGPointMake(insertionPoint.x, insertionPointLine.frame.origin.y);
     CGPoint partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.7), origPoint.y + ((destPoint.y - origPoint.y) * 0.15));
-                                
-//    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"position"];
-//    animation.duration = 0.1;
-//    animation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
-//    animation.fromValue = [self.insertionPointLayer valueForKey:@"position"];
-//    animation.toValue = [NSValue valueWithPoint:(NSPoint)point];
     
     CAKeyframeAnimation* animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
     animation.values = @[[NSValue valueWithPoint:(NSPoint)origPoint], [NSValue valueWithPoint:(NSPoint)partialPoint], [NSValue valueWithPoint:(NSPoint)destPoint]];
@@ -1227,11 +1219,25 @@ static NSCharacterSet *newlineCharacterSet;
     self.insertionPointLayer.position = destPoint;
     [self.insertionPointLayer addAnimation:animation forKey:@"position"];
     
-//    self.insertionPointLayer.frame = CGRectMake(insertionPoint.x, insertionPointLine.frame.origin.y, 2, 17);
-    
-    
     [self.layer addSublayer:self.insertionPointLayer]; // make sure it's the top layer
   }
+}
+
+- (void)pauseInsertionPointBlinking // this will disable the insertion point's blinking animation for a moment, then resume it
+{
+  NSTimeInterval delay = 0.4;
+  
+  self.dateToResumeInsertionPointBlinking = [NSDate dateWithTimeIntervalSinceNow:delay];
+  [self.insertionPointLayer removeAnimationForKey:@"opacity"];
+  self.insertionPointLayer.opacity = 1.0;
+  
+  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC));
+  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+    if ([self.dateToResumeInsertionPointBlinking timeIntervalSinceNow] > 0.01) // make sure the delay hasn't been extended
+      return;
+    
+    [self.insertionPointLayer addAnimation:self.insertionPointBlinkAnimation forKey:@"opacity"];
+  });
 }
 
 - (void)showInsertionPoint
@@ -1463,7 +1469,7 @@ static NSCharacterSet *newlineCharacterSet;
   // find the insertion point under the mouse
   NSPoint mousePoint = [self convertPoint:event.locationInWindow fromView:nil];
   
-  NSLog(@"%@", NSStringFromPoint(mousePoint));
+  [self pauseInsertionPointBlinking];
   self.insertionPointOffset = [self characterPositionForPoint:mousePoint];
 }
 
