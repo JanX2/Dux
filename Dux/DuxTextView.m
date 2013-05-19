@@ -1192,23 +1192,23 @@ static NSCharacterSet *newlineCharacterSet;
   if (!self.insertionPointLayer) {
     self.insertionPointLayer = [[CALayer alloc] init];
     self.insertionPointLayer.anchorPoint = CGPointMake(0, 0);
-    self.insertionPointLayer.frame = CGRectMake(insertionPoint.x, insertionPointLine.frame.origin.y, 2, 17);
-    self.insertionPointLayer.delegate = self;
+    self.insertionPointLayer.frame = CGRectMake(insertionPoint.x, insertionPointLine.frame.origin.y + insertionPoint.y, 2, 17);
+    self.insertionPointLayer.backgroundColor = CGColorCreateGenericRGB(0.11, 0.36, 0.93, 1.0);
     self.insertionPointLayer.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;
     [self.insertionPointLayer setNeedsDisplay];
     self.insertionPointLayer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
-    self.insertionPointLayer.opacity = 0;
     [self.layer addSublayer:self.insertionPointLayer];
     
     self.insertionPointBlinkAnimation = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
-    self.insertionPointBlinkAnimation.values = @[@1.0, @0.8, @0.8, @0.2, @1.0];     // opacity at each keyframe
-    self.insertionPointBlinkAnimation.keyTimes = @[@0.0, @0.2, @0.4, @0.9, @1.0];  // percentage through the animation for each keyframe
-    self.insertionPointBlinkAnimation.duration = 1;
+    self.insertionPointBlinkAnimation.values = @[@1.0, @0.8, @0.1, @1.0];     // opacity at each keyframe
+    self.insertionPointBlinkAnimation.keyTimes = @[@0.0, @0.3, @0.9, @1.0];  // percentage through the animation for each keyframe
+
+    self.insertionPointBlinkAnimation.duration = 0.9;
     self.insertionPointBlinkAnimation.repeatCount = HUGE_VALF;
-    [self.insertionPointLayer addAnimation:self.insertionPointBlinkAnimation forKey:@"opacity"];
+    [self.insertionPointLayer addAnimation:self.insertionPointBlinkAnimation forKey:@"blink"];
   } else {
     CGPoint origPoint = self.insertionPointLayer.position;
-    CGPoint destPoint = CGPointMake(insertionPoint.x, insertionPointLine.frame.origin.y);
+    CGPoint destPoint = CGPointMake(insertionPoint.x, insertionPointLine.frame.origin.y + insertionPoint.y);
     CGPoint partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.7), origPoint.y + ((destPoint.y - origPoint.y) * 0.15));
     
     CAKeyframeAnimation* animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
@@ -1228,7 +1228,7 @@ static NSCharacterSet *newlineCharacterSet;
   NSTimeInterval delay = 0.4;
   
   self.dateToResumeInsertionPointBlinking = [NSDate dateWithTimeIntervalSinceNow:delay];
-  [self.insertionPointLayer removeAnimationForKey:@"opacity"];
+  [self.insertionPointLayer removeAnimationForKey:@"blink"];
   self.insertionPointLayer.opacity = 1.0;
   
   dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC));
@@ -1236,7 +1236,7 @@ static NSCharacterSet *newlineCharacterSet;
     if ([self.dateToResumeInsertionPointBlinking timeIntervalSinceNow] > 0.01) // make sure the delay hasn't been extended
       return;
     
-    [self.insertionPointLayer addAnimation:self.insertionPointBlinkAnimation forKey:@"opacity"];
+    [self.insertionPointLayer addAnimation:self.insertionPointBlinkAnimation forKey:@"blink"];
   });
 }
 
@@ -1276,35 +1276,6 @@ static NSCharacterSet *newlineCharacterSet;
   dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
     [self showInsertionPoint];
   });
-}
-
-- (void)drawLayer:(CALayer *)layer inContext:(CGContextRef)context
-{
-  if (layer == self.insertionPointLayer) {
-    CGMutablePathRef path = CGPathCreateMutable();
-//    CGPathMoveToPoint(path, NULL, -0.3, 0);
-//    CGPathAddLineToPoint(path, NULL, layer.frame.size.width + 0.3, 0);
-//    CGPathAddLineToPoint(path, NULL, layer.frame.size.width - 1, 1.5);
-//    CGPathAddLineToPoint(path, NULL, layer.frame.size.width - 1, layer.frame.size.height - 1.5);
-//    CGPathAddLineToPoint(path, NULL, layer.frame.size.width + 0.3, layer.frame.size.height);
-//    CGPathAddLineToPoint(path, NULL, -0.3, layer.frame.size.height);
-//    CGPathAddLineToPoint(path, NULL, 1, layer.frame.size.height - 1.5);
-//    CGPathAddLineToPoint(path, NULL, 1, 1.5);
-//    CGPathCloseSubpath(path);
-    CGPathMoveToPoint(path, NULL, 0, 0);
-    CGPathAddLineToPoint(path, NULL, layer.frame.size.width, 0);
-    CGPathAddLineToPoint(path, NULL, layer.frame.size.width, layer.frame.size.height);
-    CGPathAddLineToPoint(path, NULL, 0, layer.frame.size.height);
-    CGPathCloseSubpath(path);
-
-    
-    CGContextAddPath(context, path);
-    
-    CGContextSetFillColorWithColor(context, CGColorCreateGenericRGB(0.11, 0.36, 0.93, 1.0));
-    CGContextDrawPath(context, kCGPathFill);
-    
-    CGPathRelease(path);
-  }
 }
 
 - (void)selectionDidChange:(NSNotification *)notif
