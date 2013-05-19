@@ -188,6 +188,40 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   return CGPointMake(FLT_MAX, 0);
 }
 
+- (NSUInteger)characterOffsetForPoint:(CGPoint)point
+{
+  NSAttributedString *stringToDraw = [self stringToDrawWithSyntaxAttributes:NO];
+  
+  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
+  
+  CGMutablePathRef path = CGPathCreateMutable();
+	CGPathAddRect(path, NULL, CGRectMake(self.bounds.origin.x + DUX_LINE_NUMBER_WIDTH, 0, self.bounds.size.width - DUX_LINE_NUMBER_WIDTH, self.bounds.size.height));
+  CTFrameRef ctframe = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
+  
+  CFArrayRef lines = CTFrameGetLines(ctframe);
+  CFIndex lineIndex, lineCount = CFArrayGetCount(lines);
+  CGPoint lineOrigins[lineCount];
+  CTFrameGetLineOrigins(ctframe, CFRangeMake(0, 0), lineOrigins);
+  
+  for (lineIndex = 0; lineIndex < lineCount; lineIndex++) {
+    CGPoint lineOrigin = lineOrigins[lineIndex];
+    if (lineOrigin.y > point.y) {
+      continue;
+    }
+    
+    CTLineRef line = CFArrayGetValueAtIndex(lines, lineIndex);
+    
+    CGPoint linePoint = point;
+    linePoint.x -= lineOrigin.x + DUX_LINE_NUMBER_WIDTH;
+    linePoint.y -= lineOrigin.y;
+    
+    CFIndex lineCharIndex = CTLineGetStringIndexForPosition(line, linePoint);
+    return self.range.location + lineCharIndex;
+  }
+  
+  return self.range.location + self.range.length;
+}
+
 - (void)drawInContext:(CGContextRef)context
 {
   [self drawInContext:context atYOffset:0 width:self.frame.size.width];

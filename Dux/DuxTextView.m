@@ -17,6 +17,9 @@
 #import "DuxBundle.h"
 #import "DuxLine.h"
 
+static CGFloat leftGutter = 4;
+static CGFloat rightGutter = 4;
+
 @interface DuxTextView()
 
 @property CALayer *insertionPointLayer;
@@ -1084,14 +1087,32 @@ static NSCharacterSet *newlineCharacterSet;
 //  [self setSelectedRanges:[newSelectedRanges copy]];
 }
 
+- (NSUInteger)characterPositionForPoint:(CGPoint)point
+{
+  // first figure out which line we are inside
+  DuxLine *line = [self.storage lineAtCharacterPosition:self.scrollPosition];
+  
+  while (line) { // layout lines for a couple hundred extra pixels to improve animations
+    line = [self.storage lineAfterLine:line];
+
+    if (line.frame.origin.y < point.y)
+      break;
+  }
+  if (!line)
+    return self.storage.string.length; // reached the end of the file
+  
+  NSLog(@"%@", line);
+  return [line characterOffsetForPoint:CGPointMake(point.x - line.frame.origin.x, point.y - line.frame.origin.y)];
+  
+  return 0;
+}
+
 - (void)updateLayer
 {
   [CATransaction begin];
   [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disable all animations. for now we assume only the line positions will change (don't want to animate that). any line height changes, we will animate
   BOOL willAnimate = NO;
   
-  CGFloat leftGutter = 4;
-  CGFloat rightGutter = 4;
   CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
   CGFloat yOffset = self.frame.size.height;
   
@@ -1435,6 +1456,15 @@ static NSCharacterSet *newlineCharacterSet;
   self.storage.string = string;
   
   [self.layer setNeedsDisplay];
+}
+
+- (void)mouseDown:(NSEvent *)event
+{
+  // find the insertion point under the mouse
+  NSPoint mousePoint = [self convertPoint:event.locationInWindow fromView:nil];
+  
+  NSLog(@"%@", NSStringFromPoint(mousePoint));
+  self.insertionPointOffset = [self characterPositionForPoint:mousePoint];
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent

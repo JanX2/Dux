@@ -19,7 +19,8 @@
 @property (readonly) NSUInteger lineNumber;
 
 - (CGFloat)heightWithWidth:(CGFloat)width;
-- (CGPoint)pointForCharacterOffset:(NSUInteger)characterOffset; // relative to entire storage, not just this line range
+- (CGPoint)pointForCharacterOffset:(NSUInteger)characterOffset; // char offset relative to entire storage. point relative to this line's frame
+- (NSUInteger)characterOffsetForPoint:(CGPoint)point; // char offset relative to entire storage. point relative to this line's frame
 
 - (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth;
 
