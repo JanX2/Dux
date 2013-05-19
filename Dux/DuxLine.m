@@ -182,18 +182,24 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   if (characterOffset == self.range.location)
     return CGPointMake(DUX_LINE_NUMBER_WIDTH, 0);
   
-  NSUInteger adjustedOffset = characterOffset - self.range.location;
-  
   CFIndex lineIndex;
   for (lineIndex = 0; lineIndex < lineCount; lineIndex++) {
     CTLineRef line = CFArrayGetValueAtIndex(lines, lineIndex);
     CFRange lineRange = CTLineGetStringRange(line);
-    if (adjustedOffset >= lineRange.location && adjustedOffset <= (lineRange.location + lineRange.length)) {
-      return CGPointMake(CTLineGetOffsetForStringIndex(line, adjustedOffset - lineRange.location, NULL) + DUX_LINE_NUMBER_WIDTH, 0);
+    
+    
+    
+    if (self.range.location + lineRange.location + lineRange.length >= characterOffset) {
+      CGFloat characterX = CTLineGetOffsetForStringIndex(line, characterOffset - self.range.location, NULL);
+      
+      CGPoint point = CGPointMake(DUX_LINE_NUMBER_WIDTH + lineOrigins[lineIndex].x + characterX,
+                                  lineOrigins[lineIndex].y - 4);
+      
+      return point;
     }
   }
   
-  return CGPointMake(FLT_MAX, 0);
+  return CGPointMake(FLT_MAX, 0); // should never reach this
 }
 
 - (NSUInteger)characterOffsetForPoint:(CGPoint)point
