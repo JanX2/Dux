@@ -409,19 +409,21 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (void)fileContentsDidChange:(DuxFileContentsWatcher *)watcher
 {
-  if ([self hasUnautosavedChanges]) {
-    NSLog(@"recieved change event, but have unsaved changes");
-    return;
-  }
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
   
-  // save old insertion point
-  NSArray *selectedRanges = [self.textView selectedRanges];
-  
-  // revert file
-  [self revertToContentsOfURL:self.fileURL ofType:self.fileType error:NULL];
-  
-  // read old insertion point
-  [self.textView setSelectedRanges:selectedRanges];
+//  if ([self hasUnautosavedChanges]) {
+//    NSLog(@"recieved change event, but have unsaved changes");
+//    return;
+//  }
+//  
+//  // save old insertion point
+//  NSArray *selectedRanges = [self.textView selectedRanges];
+//  
+//  // revert file
+//  [self revertToContentsOfURL:self.fileURL ofType:self.fileType error:NULL];
+//  
+//  // read old insertion point
+//  [self.textView setSelectedRanges:selectedRanges];
 }
 
 - (void)canCloseDocumentWithDelegate:(id)delegate shouldCloseSelector:(SEL)shouldCloseSelector contextInfo:(void *)contextInfo

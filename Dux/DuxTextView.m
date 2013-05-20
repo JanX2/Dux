@@ -20,11 +20,14 @@
 static CGFloat leftGutter = 4;
 static CGFloat rightGutter = 4;
 
+static CAKeyframeAnimation *insertionPointBlinkAnimation;
+
 @interface DuxTextView()
 
-@property CALayer *insertionPointLayer;
-@property CAKeyframeAnimation *insertionPointBlinkAnimation;
 @property NSDate *dateToResumeInsertionPointBlinking;
+
+@property (readwrite,nonatomic) NSArray *selectedRanges;
+@property (readwrite) NSArray *selectionLayers;
 
 @end
 
@@ -34,9 +37,16 @@ static NSCharacterSet *newlineCharacterSet;
 
 + (void)initialize
 {
-	[super initialize];
-	
-	newlineCharacterSet = [NSCharacterSet newlineCharacterSet];
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    newlineCharacterSet = [NSCharacterSet newlineCharacterSet];
+    
+    insertionPointBlinkAnimation = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
+    insertionPointBlinkAnimation.values = @[@1.0, @0.8, @0.1, @1.0];     // opacity at each keyframe
+    insertionPointBlinkAnimation.keyTimes = @[@0.0, @0.3, @0.9, @1.0];  // percentage through the animation for each keyframe
+    insertionPointBlinkAnimation.duration = 0.9;
+    insertionPointBlinkAnimation.repeatCount = HUGE_VALF;
+  });
 }
 
 - (id)initWithCoder:(NSCoder *)aDecoder
@@ -64,8 +74,8 @@ static NSCharacterSet *newlineCharacterSet;
 - (void)initDuxTextView
 {
   self.scrollPosition = 0;
-  
-  _insertionPointOffset = 0;
+  self.selectionLayers = @[];
+  [self setSelectedRanges:@[[NSValue valueWithRange:NSMakeRange(0, 0)]] affinity:NSSelectionAffinityUpstream stillSelecting:NO];
   
   self.wantsLayer = YES;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
@@ -151,61 +161,51 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)deleteBackward:(id)sender
 {
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
   //  // when deleting in leading whitespace, indent left instead
   //	if ([self insertionPointInLeadingWhitespace] && [self.string beginingOfLineAtOffset:self.selectedRange.location] != self.selectedRange.location) {
   //		[self shiftSelectionLeft:self];
   //		return;
   //  }
   
-  if (self.insertionPointOffset == 0) {
-    NSBeep();
-    return;
-  }
-  
-  NSRange deleteRange = NSMakeRange(self.insertionPointOffset - 1, 1);
-  if ([self.storage positionSplitsWindowsNewline:deleteRange.location]) {
-    deleteRange.location--;
-    deleteRange.length++;
-  }
-  
-  _insertionPointOffset = self.insertionPointOffset - deleteRange.length; // update insertion point offset without using the setter, or else animation will get weird
-  
-  [self.storage replaceCharactersInRange:deleteRange withString:@""];
-  [self updateLayer];
+//  if (self.insertionPointOffset == 0) {
+//    NSBeep();
+//    return;
+//  }
+//  
+//  NSRange deleteRange = NSMakeRange(self.insertionPointOffset - 1, 1);
+//  if ([self.storage positionSplitsWindowsNewline:deleteRange.location]) {
+//    deleteRange.location--;
+//    deleteRange.length++;
+//  }
+//  
+//  _insertionPointOffset = self.insertionPointOffset - deleteRange.length; // update insertion point offset without using the setter, or else animation will get weird
+//  
+//  [self.storage replaceCharactersInRange:deleteRange withString:@""];
+//  [self updateLayer];
 }
 
 - (void)deleteForward:(id)sender
 {
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
   //  // when deleting in leading whitespace, indent left instead
   //	if ([self insertionPointInLeadingWhitespace] && [self.string beginingOfLineAtOffset:self.selectedRange.location] != self.selectedRange.location) {
   //		[self shiftSelectionLeft:self];
   //		return;
   //  }
-  
-  if (self.insertionPointOffset == 0) {
-    NSBeep();
-    return;
-  }
-  
-  NSRange deleteRange = NSMakeRange(self.insertionPointOffset, 1);
-  if ([self.storage positionSplitsWindowsNewline:NSMaxRange(deleteRange)]) {
-    deleteRange.length++;
-  }
-  
-  [self.storage replaceCharactersInRange:deleteRange withString:@""];
-  [self updateLayer];
-}
-
-- (void)setInsertionPointOffset:(NSUInteger)newValue
-{
-  // are we in the middle of a windows newline?
-  if ([self.storage positionSplitsWindowsNewline:newValue]) {
-    newValue++;
-  }
-  
-  _insertionPointOffset = newValue;
-  
-  [self updateInsertionPointLayer];
+//  
+//  if (self.insertionPointOffset == 0) {
+//    NSBeep();
+//    return;
+//  }
+//  
+//  NSRange deleteRange = NSMakeRange(self.insertionPointOffset, 1);
+//  if ([self.storage positionSplitsWindowsNewline:NSMaxRange(deleteRange)]) {
+//    deleteRange.length++;
+//  }
+//  
+//  [self.storage replaceCharactersInRange:deleteRange withString:@""];
+//  [self updateLayer];
 }
 
 - (IBAction)jumpToLine:(id)sender
@@ -479,7 +479,213 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)setSelectedRanges:(NSArray *)ranges affinity:(NSSelectionAffinity)affinity stillSelecting:(BOOL)stillSelectingFlag
 {
-  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
+  // check for illegal ranges
+  NSUInteger rangeCount = ranges.count;
+  for (NSUInteger rangeIndex = 0; rangeIndex < rangeCount; rangeIndex++) {
+    NSRange range = ((NSValue *)[ranges objectAtIndex:rangeIndex]).rangeValue;
+    
+    if ([self.storage positionSplitsWindowsNewline:range.location]) {
+      range.location++;
+      range.length--;
+      
+      NSMutableArray *mutableRanges = ranges.mutableCopy;
+      [mutableRanges replaceObjectAtIndex:rangeIndex withObject:[NSValue valueWithRange:range]];
+      ranges = mutableRanges.copy;
+    }
+    
+    if ([self.storage positionSplitsWindowsNewline:range.location + range.length]) {
+      range.length++;
+      
+      NSMutableArray *mutableRanges = ranges.mutableCopy;
+      [mutableRanges replaceObjectAtIndex:rangeIndex withObject:[NSValue valueWithRange:range]];
+      ranges = mutableRanges.copy;
+    }
+  }
+  
+  
+  // create new selection range layers, attempting to re-use existing layers intelligently (so we can move them with animation)
+  NSMutableArray *newSelections = [[NSMutableArray alloc] initWithCapacity:ranges.count];
+  NSMutableArray *rangesNeedingLayers = ranges.mutableCopy;
+  
+  NSMutableArray *reusableSelectionLayers = self.selectionLayers.mutableCopy;
+  NSMutableArray *reusableSelectionLayerRanges = self.selectedRanges.mutableCopy;
+  
+  
+  // re-use layers that overlap the new ranges
+  for (NSUInteger rangeIndex = 0; rangeIndex < rangesNeedingLayers.count; rangeIndex++) {
+    NSRange range = ((NSValue *)[rangesNeedingLayers objectAtIndex:rangeIndex]).rangeValue;
+    
+    BOOL foundMatch = NO;
+    for (NSUInteger reusableRangeIndex = 0; reusableRangeIndex < reusableSelectionLayerRanges.count; reusableRangeIndex++) {
+      NSRange reusableRange = ((NSValue *)[reusableSelectionLayerRanges objectAtIndex:reusableRangeIndex]).rangeValue;
+      
+      
+      if (range.location >= reusableRange.location && range.location <= (reusableRange.location + reusableRange.length)) {
+        foundMatch = YES;
+      }
+      
+      if (!foundMatch && (range.location + range.length) >= reusableRange.location && (range.location + range.length) <= (reusableRange.location + reusableRange.length)) {
+        foundMatch = YES;
+      }
+      
+      if (foundMatch) {
+        [newSelections addObject:@{@"range":[NSValue valueWithRange:range], @"layer":[reusableSelectionLayers objectAtIndex:reusableRangeIndex]}];
+        [reusableSelectionLayers removeObjectAtIndex:reusableRangeIndex];
+        [reusableSelectionLayerRanges removeObjectAtIndex:reusableRangeIndex];
+        break;
+      }
+    }
+    if (foundMatch) {
+      [rangesNeedingLayers removeObjectAtIndex:rangeIndex];
+      rangeIndex--;
+    }
+  }
+  
+  // re-use layers that are closest to the new ranges (if two ranges are equal distance apart, slectionAffinity defines the one we use
+  for (NSUInteger rangeIndex = 0; rangeIndex < rangesNeedingLayers.count; rangeIndex++) {
+    NSRange range = ((NSValue *)[rangesNeedingLayers objectAtIndex:rangeIndex]).rangeValue;
+    
+    BOOL foundLayer = NO;
+    NSInteger closestRangeDistance = LONG_MAX;
+    NSUInteger closestRangeIndex;
+    for (NSUInteger reusableRangeIndex = 0; reusableRangeIndex < reusableSelectionLayerRanges.count; reusableRangeIndex++) {
+      NSRange reusableRange = ((NSValue *)[reusableSelectionLayerRanges objectAtIndex:reusableRangeIndex]).rangeValue;
+      
+      NSInteger distance = labs(reusableRange.location - range.location);
+      distance = MIN(distance, labs((reusableRange.location + reusableRange.length) - range.location));
+      distance = MIN(distance, labs(reusableRange.location - (range.location + reusableRange.length)));
+      distance = MIN(distance, labs((reusableRange.location + reusableRange.length) - (range.location + reusableRange.length)));
+      
+      if (affinity == NSSelectionAffinityDownstream && (reusableRange.location + reusableRange.length) < range.location) {
+        distance++;
+      } else if (affinity == NSSelectionAffinityUpstream && (reusableRange.location + reusableRange.length) > range.location) {
+        distance++;
+      }
+      
+      if (distance < closestRangeDistance) {
+        foundLayer = YES;
+        closestRangeDistance = distance;
+        closestRangeIndex = reusableRangeIndex;
+      }
+    }
+    if (foundLayer) {
+      CALayer *layer = [reusableSelectionLayers objectAtIndex:closestRangeIndex];
+      
+      DuxLine *insertionPointLine = [self.storage lineAtCharacterPosition:range.location];
+      CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:range.location];
+      CGPoint destPoint = CGPointMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
+                                      insertionPointLine.frame.origin.y + insertionPoint.y);
+      
+      CGPoint origPoint = layer.position;
+      CGPoint partialPoint;
+      NSNumber *midKeyTime;
+      if (fabs(origPoint.y - destPoint.y) < 0.1) { // y is the same, so accelerate x for the first 75% of animation to make it feel more responsive
+        partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.7), destPoint.y);
+        midKeyTime = @0.15;
+      } else if (fabs(origPoint.x - destPoint.x) < 0.1) { // x is the same, so accelerate y for the first 75% of animation to make it feel more responsive
+        partialPoint = CGPointMake(destPoint.x, origPoint.y + ((destPoint.y - origPoint.y) * 0.7));
+        midKeyTime = @0.15;
+      } else { // linear x and y movement (make it move in a straight line diagonally)
+        partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.5), origPoint.y + ((destPoint.y - origPoint.y) * 0.5));
+        midKeyTime = @0.5;
+      }
+      
+      CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+      animation.values = @[[NSValue valueWithPoint:(NSPoint)origPoint], [NSValue valueWithPoint:(NSPoint)partialPoint], [NSValue valueWithPoint:(NSPoint)destPoint]];
+      animation.keyTimes = @[@0.0, midKeyTime, @1.0];
+      animation.duration = 0.1;
+      
+      layer.position = destPoint;
+      [layer addAnimation:animation forKey:@"position"];
+      
+      [newSelections addObject:@{@"range":[NSValue valueWithRange:range], @"layer":layer}];
+      [reusableSelectionLayers removeObjectAtIndex:closestRangeIndex];
+      [reusableSelectionLayerRanges removeObjectAtIndex:closestRangeIndex];
+      
+      [rangesNeedingLayers removeObjectAtIndex:rangeIndex];
+      rangeIndex--;
+    }
+  }
+  
+  // kill any layers we didn't re-use
+  for (CALayer *layer in reusableSelectionLayers) {
+    [layer removeFromSuperlayer];
+  }
+  
+  // insert new layers that we couldn't re-use
+  for (NSUInteger rangeIndex = 0; rangeIndex < rangesNeedingLayers.count; rangeIndex++) {
+    NSRange range = ((NSValue *)[rangesNeedingLayers objectAtIndex:rangeIndex]).rangeValue;
+    
+    CALayer *layer = [[CALayer alloc] init];
+    layer.anchorPoint = CGPointMake(0, 0);
+    layer.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;
+    layer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
+    if (range.length == 0) {
+      DuxLine *insertionPointLine = [self.storage lineAtCharacterPosition:range.location];
+      CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:range.location];
+      
+      layer.frame = CGRectMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
+                               insertionPointLine.frame.origin.y + insertionPoint.y,
+                               2,
+                               17);
+      layer.backgroundColor = CGColorCreateGenericRGB(0.11, 0.36, 0.93, 1.0);
+      layer.compositingFilter = [CIFilter filterWithName:@"CIMultiplyBlendMode"];
+      
+      CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
+      animation.values = @[@0.0, @1.0];
+      animation.keyTimes = @[@0.0, @1.0];
+      animation.duration = 0.25;
+      
+      [layer addAnimation:animation forKey:@"position"];
+      [self.layer addSublayer:layer];
+    } else {
+      DuxLine *startPointLine = [self.storage lineAtCharacterPosition:range.location];
+      CGPoint startPoint = [startPointLine pointForCharacterOffset:range.location];
+      DuxLine *endPointLine = [self.storage lineAtCharacterPosition:range.location + range.length];
+      CGPoint endPoint = [endPointLine pointForCharacterOffset:range.location + range.length];
+      
+      layer.frame = CGRectMake(round(startPointLine.frame.origin.x + startPoint.x),
+                               startPointLine.frame.origin.y + startPoint.y,
+                               round(startPointLine.frame.origin.x + endPoint.x),
+                               17);
+      layer.backgroundColor = [NSColor selectedTextBackgroundColor].CGColor;
+      layer.compositingFilter = [CIFilter filterWithName:@"CIMultiplyBlendMode"];
+      
+      CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
+      animation.values = @[@0.0, @1.0];
+      animation.keyTimes = @[@0.0, @1.0];
+      animation.duration = 0.25;
+      
+      [layer addAnimation:animation forKey:@"position"];
+      [self.layer addSublayer:layer];
+      
+//      layer.frame = CGRectMake(50, 50, 200, 80);
+//      layer.compositingFilter = [CIFilter filterWithName:@"CIMultiplyBlendMode"];
+    }
+    
+    [newSelections addObject:@{@"range":[NSValue valueWithRange:range], @"layer":layer}];
+  }
+  
+  // sort new selections
+  [newSelections sortUsingComparator:^NSComparisonResult(NSDictionary *selection1, NSDictionary *selection2) {
+    NSRange range1 = ((NSValue *)[selection1 valueForKey:@"range"]).rangeValue;
+    NSRange range2 = ((NSValue *)[selection2 valueForKey:@"range"]).rangeValue;
+    
+    if (range1.location < range2.location) {
+      return NSOrderedAscending;
+    } else if (range1.location > range2.location) {
+      return NSOrderedDescending;
+    } else {
+      return NSOrderedSame;
+    }
+  }];
+  
+  // apply the new ranges and layers
+  _selectedRanges = [newSelections valueForKey:@"range"];
+  self.selectionLayers = [newSelections valueForKey:@"layer"];
+  
+  // pause insertion point blinking, and update layers
+  [self pauseInsertionPointBlinking];
 }
 
 - (NSArray *)completionsForPartialWordRange:(NSRange)charRange indexOfSelectedItem:(NSInteger *)index
@@ -557,13 +763,14 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)insertText:(id)insertString
 {
-  NSString *string = [insertString isKindOfClass:[NSAttributedString class]] ? [insertString string] : insertString;
-  
-  [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset, 0) withString:string];
-  [self updateLayer];
-  
-  [self pauseInsertionPointBlinking];
-  self.insertionPointOffset = self.insertionPointOffset + string.length;
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
+//  NSString *string = [insertString isKindOfClass:[NSAttributedString class]] ? [insertString string] : insertString;
+//  
+//  [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset, 0) withString:string];
+//  [self updateLayer];
+//  
+//  [self pauseInsertionPointBlinking];
+//  self.insertionPointOffset = self.insertionPointOffset + string.length;
 }
 
 - (void)insertSnippet:(NSString *)snippet
@@ -876,78 +1083,124 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)moveBackward:(id)sender
 {
-  if (self.insertionPointOffset == 0)
-    return;
+  NSMutableArray *newRanges = [NSMutableArray arrayWithCapacity:self.selectedRanges.count];
   
-  NSUInteger newOffset = self.insertionPointOffset - 1;
-  if ([self.storage positionSplitsWindowsNewline:newOffset])
-    newOffset--;
+  for (NSValue *rangeValue in self.selectedRanges) {
+    NSRange range = rangeValue.rangeValue;
+    
+    if (range.location == 0) {
+      [newRanges addObject:rangeValue];
+      continue;
+    }
+    
+    range.location--;
+    range.length = 0;
+    if ([self.storage positionSplitsWindowsNewline:range.location])
+      range.location--;
+    
+    [newRanges addObject:[NSValue valueWithRange:range]];
+  }
   
-  [self pauseInsertionPointBlinking];
-  self.insertionPointOffset = newOffset;
+  [self setSelectedRanges:newRanges.copy affinity:NSSelectionAffinityUpstream stillSelecting:NO];
 }
 
 - (void)moveForward:(id)sender
 {
-  if (self.insertionPointOffset == self.storage.string.length)
-    return;
+  NSMutableArray *newRanges = [NSMutableArray arrayWithCapacity:self.selectedRanges.count];
   
-  [self pauseInsertionPointBlinking];
-  self.insertionPointOffset = self.insertionPointOffset + 1;
+  for (NSValue *rangeValue in self.selectedRanges) {
+    NSRange range = rangeValue.rangeValue;
+    
+    if (range.location == self.storage.string.length) {
+      [newRanges addObject:rangeValue];
+      continue;
+    }
+    
+    range.location++;
+    range.length = 0;
+    
+    [newRanges addObject:[NSValue valueWithRange:range]];
+  }
+  
+  [self setSelectedRanges:newRanges.copy affinity:NSSelectionAffinityUpstream stillSelecting:NO];
 }
 
 - (void)moveUp:(id)sender
 {
-  DuxLine *currentLine = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
-  DuxLine *newLine = [self.storage lineBeforeLine:currentLine];
+  NSMutableArray *newRanges = [NSMutableArray arrayWithCapacity:self.selectedRanges.count];
   
-  if (!newLine){
-    self.insertionPointOffset = 0;
-    return;
+  for (NSValue *rangeValue in self.selectedRanges) {
+    NSRange range = rangeValue.rangeValue;
+    
+    DuxLine *currentLine = [self.storage lineAtCharacterPosition:range.location];
+    DuxLine *newLine = [self.storage lineBeforeLine:currentLine];
+
+    if (!newLine){
+      range.location = 0;
+      range.length = 0;
+    } else {
+      NSUInteger columnIndex = range.location - currentLine.range.location;
+      if (columnIndex > newLine.range.length)
+        columnIndex = newLine.range.length;
+      
+      range.location = newLine.range.location + columnIndex;
+      range.length = 0;
+    }
+    
+    [newRanges addObject:[NSValue valueWithRange:range]];
   }
   
-  NSUInteger columnIndex = self.insertionPointOffset - currentLine.range.location;
-  if (columnIndex > newLine.range.length)
-    columnIndex = newLine.range.length;
-  
-  [self pauseInsertionPointBlinking];
-  self.insertionPointOffset = newLine.range.location + columnIndex;
+  [self setSelectedRanges:newRanges.copy affinity:NSSelectionAffinityUpstream stillSelecting:NO];
 }
 
 - (void)moveDown:(id)sender
 {
-  DuxLine *currentLine = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
-  DuxLine *newLine = [self.storage lineAfterLine:currentLine];
+  NSMutableArray *newRanges = [NSMutableArray arrayWithCapacity:self.selectedRanges.count];
   
-  if (!newLine){
-    [self pauseInsertionPointBlinking];
-    self.insertionPointOffset = self.storage.length;
-    return;
+  for (NSValue *rangeValue in self.selectedRanges) {
+    NSRange range = rangeValue.rangeValue;
+    
+    DuxLine *currentLine = [self.storage lineAtCharacterPosition:range.location];
+    DuxLine *newLine = [self.storage lineAfterLine:currentLine];
+    
+    if (!newLine){
+      range.location = self.storage.length;
+      range.length = 0;
+    } else {
+      
+      NSUInteger columnIndex = range.location - currentLine.range.location;
+      if (columnIndex > newLine.range.length)
+        columnIndex = newLine.range.length;
+      
+      range.location = newLine.range.location + columnIndex;
+      range.length = 0;
+    }
+    
+    [newRanges addObject:[NSValue valueWithRange:range]];
   }
   
-  NSUInteger columnIndex = self.insertionPointOffset - currentLine.range.location;
-  if (columnIndex > newLine.range.length)
-    columnIndex = newLine.range.length;
+  [newRanges addObject:[NSValue valueWithRange:NSMakeRange(500, 10)]];
   
-  [self pauseInsertionPointBlinking];
-  self.insertionPointOffset = newLine.range.location + columnIndex;
+  [self setSelectedRanges:newRanges.copy affinity:NSSelectionAffinityUpstream stillSelecting:NO];
 }
 
 - (void)moveToBeginningOfLine:(id)sender
 {
-  DuxLine *line = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
-  
-  [self pauseInsertionPointBlinking];
-  self.insertionPointOffset = line.range.location;
-  [self updateInsertionPointLayer];
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
+//  DuxLine *line = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
+//  
+//  [self pauseInsertionPointBlinking];
+//  self.insertionPointOffset = line.range.location;
+//  [self updateSelectionLayers];
 }
 
 - (void)moveToEndOfLine:(id)sender
 {
-  DuxLine *line = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
-  
-  [self pauseInsertionPointBlinking];
-  self.insertionPointOffset = NSMaxRange(line.range);
+  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
+//  DuxLine *line = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
+//  
+//  [self pauseInsertionPointBlinking];
+//  self.insertionPointOffset = NSMaxRange(line.range);
 }
 
 - (void)moveSubwordBackward:(id)sender
@@ -1161,7 +1414,7 @@ static NSCharacterSet *newlineCharacterSet;
   }
   
   for (CALayer *layer in self.layer.sublayers.copy) {
-    if (layer == self.insertionPointLayer)
+    if ([self.selectionLayers containsObject:layer])
       continue;
     
     if ([lineLayers containsObject:layer])
@@ -1180,101 +1433,89 @@ static NSCharacterSet *newlineCharacterSet;
   
   [CATransaction commit];
   
-  [self updateInsertionPointLayer];
+  [self updateSelectionLayers];
 }
 
-- (void)updateInsertionPointLayer
+- (void)updateSelectionLayers
 {
-  DuxLine *insertionPointLine = [self.storage lineAtCharacterPosition:self.insertionPointOffset];
-  CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:self.insertionPointOffset];
-  insertionPoint.x = round(insertionPointLine.frame.origin.x + insertionPoint.x);
+  NSUInteger selectionCount = self.selectedRanges.count;
+  if (selectionCount == 0)
+    return;
   
-  if (!self.insertionPointLayer) {
-    self.insertionPointLayer = [[CALayer alloc] init];
-    self.insertionPointLayer.anchorPoint = CGPointMake(0, 0);
-    self.insertionPointLayer.frame = CGRectMake(insertionPoint.x, insertionPointLine.frame.origin.y + insertionPoint.y, 2, 17);
-    self.insertionPointLayer.backgroundColor = CGColorCreateGenericRGB(0.11, 0.36, 0.93, 1.0);
-    self.insertionPointLayer.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;
-    [self.insertionPointLayer setNeedsDisplay];
-    self.insertionPointLayer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
-    [self.layer addSublayer:self.insertionPointLayer];
+  for (NSUInteger selectionIndex = 0; selectionIndex < selectionCount; selectionIndex++) {
+    NSRange range = ((NSValue *)[self.selectedRanges objectAtIndex:selectionIndex]).rangeValue;
+    CALayer *layer = [self.selectionLayers objectAtIndex:selectionIndex];
     
-    self.insertionPointBlinkAnimation = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
-    self.insertionPointBlinkAnimation.values = @[@1.0, @0.8, @0.1, @1.0];     // opacity at each keyframe
-    self.insertionPointBlinkAnimation.keyTimes = @[@0.0, @0.3, @0.9, @1.0];  // percentage through the animation for each keyframe
-
-    self.insertionPointBlinkAnimation.duration = 0.9;
-    self.insertionPointBlinkAnimation.repeatCount = HUGE_VALF;
-    [self.insertionPointLayer addAnimation:self.insertionPointBlinkAnimation forKey:@"blink"];
-  } else {
-    CGPoint origPoint = self.insertionPointLayer.position;
-    CGPoint destPoint = CGPointMake(insertionPoint.x, insertionPointLine.frame.origin.y + insertionPoint.y);
-    CGPoint partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.7), origPoint.y + ((destPoint.y - origPoint.y) * 0.15));
-    
-    CAKeyframeAnimation* animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
-    animation.values = @[[NSValue valueWithPoint:(NSPoint)origPoint], [NSValue valueWithPoint:(NSPoint)partialPoint], [NSValue valueWithPoint:(NSPoint)destPoint]];
-    animation.keyTimes = @[@0.0, @0.15, @1.0];
-    animation.duration = 0.1;
-    
-    self.insertionPointLayer.position = destPoint;
-    [self.insertionPointLayer addAnimation:animation forKey:@"position"];
-    
-    [self.layer addSublayer:self.insertionPointLayer]; // make sure it's the top layer
+    if (range.length == 0) {
+      DuxLine *insertionPointLine = [self.storage lineAtCharacterPosition:range.location];
+      CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:range.location];
+      CGPoint destPoint = CGPointMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
+                                      insertionPointLine.frame.origin.y + insertionPoint.y);
+      
+      CGPoint origPoint = layer.position;
+      CGPoint partialPoint;
+      NSNumber *midKeyTime;
+      if (fabs(origPoint.y - destPoint.y) < 0.1) { // y is the same, so accelerate x for the first 75% of animation to make it feel more responsive
+        partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.7), destPoint.y);
+        midKeyTime = @0.15;
+      } else if (fabs(origPoint.x - destPoint.x) < 0.1) { // x is the same, so accelerate y for the first 75% of animation to make it feel more responsive
+        partialPoint = CGPointMake(destPoint.x, origPoint.y + ((destPoint.y - origPoint.y) * 0.7));
+        midKeyTime = @0.15;
+      } else { // linear x and y movement (make it move in a straight line diagonally)
+        partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.5), origPoint.y + ((destPoint.y - origPoint.y) * 0.5));
+        midKeyTime = @0.5;
+      }
+      
+      CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+      animation.values = @[[NSValue valueWithPoint:(NSPoint)origPoint], [NSValue valueWithPoint:(NSPoint)partialPoint], [NSValue valueWithPoint:(NSPoint)destPoint]];
+      animation.keyTimes = @[@0.0, midKeyTime, @1.0];
+      animation.duration = 0.1;
+      
+      layer.position = destPoint;
+      [layer addAnimation:animation forKey:@"position"];
+    } else {
+      /* ... */
+    }
+  }
+  
+  // make sure our selection layers are on top of everything else
+  for (CALayer *layer in self.selectionLayers) {
+    [self.layer addSublayer:layer];
   }
 }
 
 - (void)pauseInsertionPointBlinking // this will disable the insertion point's blinking animation for a moment, then resume it
 {
-  NSTimeInterval delay = 0.4;
+  NSUInteger selectionCount = self.selectedRanges.count;
+  if (selectionCount == 0)
+    return;
   
+  NSTimeInterval delay = 0.4;
   self.dateToResumeInsertionPointBlinking = [NSDate dateWithTimeIntervalSinceNow:delay];
-  [self.insertionPointLayer removeAnimationForKey:@"blink"];
-  self.insertionPointLayer.opacity = 1.0;
+  
+  for (NSUInteger selectionIndex = 0; selectionIndex < selectionCount; selectionIndex++) {
+    NSRange range = ((NSValue *)[self.selectedRanges objectAtIndex:selectionIndex]).rangeValue;
+    if (range.length > 0)
+      continue;
+    
+    CALayer *layer = [self.selectionLayers objectAtIndex:selectionIndex];
+    [layer removeAnimationForKey:@"blink"];
+    layer.opacity = 1.0;
+  }
   
   dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC));
   dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
     if ([self.dateToResumeInsertionPointBlinking timeIntervalSinceNow] > 0.01) // make sure the delay hasn't been extended
       return;
     
-    [self.insertionPointLayer addAnimation:self.insertionPointBlinkAnimation forKey:@"blink"];
-  });
-}
-
-- (void)showInsertionPoint
-{
-//  [CATransaction begin];
-//  [CATransaction setAnimationDuration:0.2];
-//  self.insertionPointLayer.opacity = 1;
-//  [CATransaction commit];
-  
-  CABasicAnimation *flash = [CABasicAnimation animationWithKeyPath:@"opacity"];
-  flash.fromValue = [NSNumber numberWithFloat:0.3];
-  flash.toValue = [NSNumber numberWithFloat:1.0];
-  flash.duration = 0.2;
-  flash.repeatCount = 0;
-  [self.insertionPointLayer addAnimation:flash forKey:@"flash"];
-  
-  
-  double delayInSeconds = 0.3;
-  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-    [self hideInsertionPoint];
-  });
-}
-
-- (void)hideInsertionPoint
-{
-  CABasicAnimation *flash = [CABasicAnimation animationWithKeyPath:@"opacity"];
-  flash.fromValue = [NSNumber numberWithFloat:1];
-  flash.toValue = [NSNumber numberWithFloat:0.3];
-  flash.duration = 0.4;
-  flash.repeatCount = 0;
-  [self.insertionPointLayer addAnimation:flash forKey:@"flash"];
-  
-  double delayInSeconds = 4;
-  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-    [self showInsertionPoint];
+    for (NSUInteger selectionIndex = 0; selectionIndex < selectionCount; selectionIndex++) {
+      NSRange range = ((NSValue *)[self.selectedRanges objectAtIndex:selectionIndex]).rangeValue;
+      if (range.length > 0)
+        continue;
+      
+      CALayer *layer = [self.selectionLayers objectAtIndex:selectionIndex];
+      [layer addAnimation:insertionPointBlinkAnimation forKey:@"blink"];
+    }
   });
 }
 
@@ -1439,9 +1680,32 @@ static NSCharacterSet *newlineCharacterSet;
 {
   // find the insertion point under the mouse
   NSPoint mousePoint = [self convertPoint:event.locationInWindow fromView:nil];
+  NSUInteger characterOffset = [self characterPositionForPoint:mousePoint];
   
-  [self pauseInsertionPointBlinking];
-  self.insertionPointOffset = [self characterPositionForPoint:mousePoint];
+  // figure out what we should do next
+  NSArray *newSelectedRanges = nil;
+  if (event.modifierFlags & NSCommandKeyMask) {
+    // remove existing range?
+    for (NSUInteger rangeIndex = 0; rangeIndex < self.selectedRanges.count; rangeIndex++) {
+      NSRange range = ((NSValue *)[self.selectedRanges objectAtIndex:rangeIndex]).rangeValue;
+      
+      if (range.location >= characterOffset && (range.location + range.length) <= characterOffset) {
+        NSMutableArray *mutableRanges = self.selectedRanges.mutableCopy;
+        [mutableRanges removeObjectAtIndex:rangeIndex];
+        newSelectedRanges = mutableRanges.copy;
+        break;
+      }
+    }
+    
+    // if didn't remove one, then add this range
+    if (!newSelectedRanges) {
+      newSelectedRanges = [self.selectedRanges arrayByAddingObject:[NSValue valueWithRange:NSMakeRange(characterOffset, 0)]];
+    }
+  } else {
+    newSelectedRanges = @[[NSValue valueWithRange:NSMakeRange(characterOffset, 0)]];
+  }
+  
+  [self setSelectedRanges:newSelectedRanges affinity:NSSelectionAffinityDownstream stillSelecting:NO];
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent
