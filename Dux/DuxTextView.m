@@ -529,7 +529,34 @@ static NSCharacterSet *newlineCharacterSet;
       }
       
       if (foundMatch) {
-        [newSelections addObject:@{@"range":[NSValue valueWithRange:range], @"layer":[reusableSelectionLayers objectAtIndex:reusableRangeIndex]}];
+        NSRange oldRange = ((NSValue *)[reusableSelectionLayerRanges objectAtIndex:reusableRangeIndex]).rangeValue;
+        CALayer *layer = [reusableSelectionLayers objectAtIndex:reusableRangeIndex];
+        if (oldRange.length != range.length) {
+          if (range.length == 0) {
+            DuxLine *insertionPointLine = [self.storage lineAtCharacterPosition:range.location];
+            CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:range.location];
+            
+            layer.frame = CGRectMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
+                                     insertionPointLine.frame.origin.y + insertionPoint.y,
+                                     2,
+                                     17);
+            layer.backgroundColor = CGColorCreateGenericRGB(0.11, 0.36, 0.93, 1.0);
+          } else {
+            DuxLine *startPointLine = [self.storage lineAtCharacterPosition:range.location];
+            CGPoint startPoint = [startPointLine pointForCharacterOffset:range.location];
+            DuxLine *endPointLine = [self.storage lineAtCharacterPosition:range.location + range.length];
+            CGPoint endPoint = [endPointLine pointForCharacterOffset:range.location + range.length];
+            
+            layer.frame = CGRectMake(round(startPointLine.frame.origin.x + startPoint.x),
+                                     startPointLine.frame.origin.y + startPoint.y,
+                                     round(endPoint.x - startPoint.x),
+                                     17);
+            layer.backgroundColor = [NSColor selectedTextBackgroundColor].CGColor;
+            [layer removeAnimationForKey:@"blink"];
+          }
+        }
+        
+        [newSelections addObject:@{@"range":[NSValue valueWithRange:range], @"layer":layer}];
         [reusableSelectionLayers removeObjectAtIndex:reusableRangeIndex];
         [reusableSelectionLayerRanges removeObjectAtIndex:reusableRangeIndex];
         break;
@@ -569,34 +596,60 @@ static NSCharacterSet *newlineCharacterSet;
       }
     }
     if (foundLayer) {
+      NSRange oldRange = ((NSValue *)[reusableSelectionLayerRanges objectAtIndex:closestRangeIndex]).rangeValue;
       CALayer *layer = [reusableSelectionLayers objectAtIndex:closestRangeIndex];
       
-      DuxLine *insertionPointLine = [self.storage lineAtCharacterPosition:range.location];
-      CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:range.location];
-      CGPoint destPoint = CGPointMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
-                                      insertionPointLine.frame.origin.y + insertionPoint.y);
-      
-      CGPoint origPoint = layer.position;
-      CGPoint partialPoint;
-      NSNumber *midKeyTime;
-      if (fabs(origPoint.y - destPoint.y) < 0.1) { // y is the same, so accelerate x for the first 75% of animation to make it feel more responsive
-        partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.7), destPoint.y);
-        midKeyTime = @0.15;
-      } else if (fabs(origPoint.x - destPoint.x) < 0.1) { // x is the same, so accelerate y for the first 75% of animation to make it feel more responsive
-        partialPoint = CGPointMake(destPoint.x, origPoint.y + ((destPoint.y - origPoint.y) * 0.7));
-        midKeyTime = @0.15;
-      } else { // linear x and y movement (make it move in a straight line diagonally)
-        partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.5), origPoint.y + ((destPoint.y - origPoint.y) * 0.5));
-        midKeyTime = @0.5;
+      if (oldRange.length != range.length) {
+        if (range.length == 0) {
+          DuxLine *insertionPointLine = [self.storage lineAtCharacterPosition:range.location];
+          CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:range.location];
+          
+          layer.frame = CGRectMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
+                                   insertionPointLine.frame.origin.y + insertionPoint.y,
+                                   2,
+                                   17);
+          layer.backgroundColor = CGColorCreateGenericRGB(0.11, 0.36, 0.93, 1.0);
+        } else {
+          DuxLine *startPointLine = [self.storage lineAtCharacterPosition:range.location];
+          CGPoint startPoint = [startPointLine pointForCharacterOffset:range.location];
+          DuxLine *endPointLine = [self.storage lineAtCharacterPosition:range.location + range.length];
+          CGPoint endPoint = [endPointLine pointForCharacterOffset:range.location + range.length];
+          
+          layer.frame = CGRectMake(round(startPointLine.frame.origin.x + startPoint.x),
+                                   startPointLine.frame.origin.y + startPoint.y,
+                                   round(endPoint.x - startPoint.x),
+                                   17);
+          layer.backgroundColor = [NSColor selectedTextBackgroundColor].CGColor;
+          [layer removeAnimationForKey:@"blink"];
+        }
+      } else {
+        DuxLine *insertionPointLine = [self.storage lineAtCharacterPosition:range.location];
+        CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:range.location];
+        CGPoint destPoint = CGPointMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
+                                        insertionPointLine.frame.origin.y + insertionPoint.y);
+        
+        CGPoint origPoint = layer.position;
+        CGPoint partialPoint;
+        NSNumber *midKeyTime;
+        if (fabs(origPoint.y - destPoint.y) < 0.1) { // y is the same, so accelerate x for the first 75% of animation to make it feel more responsive
+          partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.7), destPoint.y);
+          midKeyTime = @0.15;
+        } else if (fabs(origPoint.x - destPoint.x) < 0.1) { // x is the same, so accelerate y for the first 75% of animation to make it feel more responsive
+          partialPoint = CGPointMake(destPoint.x, origPoint.y + ((destPoint.y - origPoint.y) * 0.7));
+          midKeyTime = @0.15;
+        } else { // linear x and y movement (make it move in a straight line diagonally)
+          partialPoint = CGPointMake(origPoint.x + ((destPoint.x - origPoint.x) * 0.5), origPoint.y + ((destPoint.y - origPoint.y) * 0.5));
+          midKeyTime = @0.5;
+        }
+        
+        CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+        animation.values = @[[NSValue valueWithPoint:(NSPoint)origPoint], [NSValue valueWithPoint:(NSPoint)partialPoint], [NSValue valueWithPoint:(NSPoint)destPoint]];
+        animation.keyTimes = @[@0.0, midKeyTime, @1.0];
+        animation.duration = 0.1;
+        
+        layer.position = destPoint;
+        [layer addAnimation:animation forKey:@"position"];
       }
-      
-      CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
-      animation.values = @[[NSValue valueWithPoint:(NSPoint)origPoint], [NSValue valueWithPoint:(NSPoint)partialPoint], [NSValue valueWithPoint:(NSPoint)destPoint]];
-      animation.keyTimes = @[@0.0, midKeyTime, @1.0];
-      animation.duration = 0.1;
-      
-      layer.position = destPoint;
-      [layer addAnimation:animation forKey:@"position"];
       
       [newSelections addObject:@{@"range":[NSValue valueWithRange:range], @"layer":layer}];
       [reusableSelectionLayers removeObjectAtIndex:closestRangeIndex];
@@ -646,7 +699,7 @@ static NSCharacterSet *newlineCharacterSet;
       
       layer.frame = CGRectMake(round(startPointLine.frame.origin.x + startPoint.x),
                                startPointLine.frame.origin.y + startPoint.y,
-                               round(startPointLine.frame.origin.x + endPoint.x),
+                               round(endPoint.x - startPoint.x),
                                17);
       layer.backgroundColor = [NSColor selectedTextBackgroundColor].CGColor;
       layer.compositingFilter = [CIFilter filterWithName:@"CIMultiplyBlendMode"];
@@ -885,7 +938,7 @@ static NSCharacterSet *newlineCharacterSet;
           [self moveSubwordForward:self];
         }
       } else {
-        [self moveForward:self];
+        [self moveForward:self extendSelection:((theEvent.modifierFlags & NSShiftKeyMask) > 0)];
       }
       return;
     case NSUpArrowFunctionKey:
@@ -1104,20 +1157,24 @@ static NSCharacterSet *newlineCharacterSet;
   [self setSelectedRanges:newRanges.copy affinity:NSSelectionAffinityUpstream stillSelecting:NO];
 }
 
-- (void)moveForward:(id)sender
+- (void)moveForward:(id)sender extendSelection:(BOOL)extend
 {
   NSMutableArray *newRanges = [NSMutableArray arrayWithCapacity:self.selectedRanges.count];
   
   for (NSValue *rangeValue in self.selectedRanges) {
     NSRange range = rangeValue.rangeValue;
     
-    if (range.location == self.storage.string.length) {
+    if (range.location + range.length == self.storage.string.length) {
       [newRanges addObject:rangeValue];
       continue;
     }
     
-    range.location++;
-    range.length = 0;
+    if (extend) {
+      range.length++;
+    } else {
+      range.location++;
+      range.length = 0;
+    }
     
     [newRanges addObject:[NSValue valueWithRange:range]];
   }
@@ -1178,8 +1235,6 @@ static NSCharacterSet *newlineCharacterSet;
     
     [newRanges addObject:[NSValue valueWithRange:range]];
   }
-  
-  [newRanges addObject:[NSValue valueWithRange:NSMakeRange(500, 10)]];
   
   [self setSelectedRanges:newRanges.copy affinity:NSSelectionAffinityUpstream stillSelecting:NO];
 }
