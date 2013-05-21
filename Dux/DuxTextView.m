@@ -28,6 +28,7 @@ static CAKeyframeAnimation *insertionPointBlinkAnimation;
 
 @property (readwrite,nonatomic) NSArray *selectedRanges;
 @property (readwrite) NSArray *selectionLayers;
+@property (readwrite) NSSelectionAffinity selectionAffinity;
 
 @end
 
@@ -75,7 +76,8 @@ static NSCharacterSet *newlineCharacterSet;
 {
   self.scrollPosition = 0;
   self.selectionLayers = @[];
-  [self setSelectedRanges:@[[NSValue valueWithRange:NSMakeRange(0, 0)]] affinity:NSSelectionAffinityUpstream stillSelecting:NO];
+  self.selectionAffinity = NSSelectionAffinityDownstream;
+  self.selectedRanges = @[[NSValue valueWithRange:NSMakeRange(0, 0)]];
   
   self.wantsLayer = YES;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
@@ -161,28 +163,43 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)deleteBackward:(id)sender
 {
-  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
   //  // when deleting in leading whitespace, indent left instead
   //	if ([self insertionPointInLeadingWhitespace] && [self.string beginingOfLineAtOffset:self.selectedRange.location] != self.selectedRange.location) {
   //		[self shiftSelectionLeft:self];
   //		return;
   //  }
   
-//  if (self.insertionPointOffset == 0) {
-//    NSBeep();
-//    return;
-//  }
-//  
-//  NSRange deleteRange = NSMakeRange(self.insertionPointOffset - 1, 1);
-//  if ([self.storage positionSplitsWindowsNewline:deleteRange.location]) {
-//    deleteRange.location--;
-//    deleteRange.length++;
-//  }
-//  
-//  _insertionPointOffset = self.insertionPointOffset - deleteRange.length; // update insertion point offset without using the setter, or else animation will get weird
-//  
-//  [self.storage replaceCharactersInRange:deleteRange withString:@""];
-//  [self updateLayer];
+  NSInteger rangeLocationDelta = 0;
+  NSMutableArray *newSelectedRanges = [NSMutableArray arrayWithCapacity:self.selectedRanges.count];
+  for (NSValue *rangeValue in self.selectedRanges) {
+    NSRange range = rangeValue.rangeValue;
+    if (range.location >= (0 - rangeLocationDelta)) {
+      range.location += rangeLocationDelta;
+    } else {
+      range.location = 0;
+    }
+    
+    if (range.length == 0) {
+      if (range.location == 0)
+        continue;
+      
+      range.location--;
+      range.length = 1;
+      if ([self.storage positionSplitsWindowsNewline:range.location]) {
+        range.location--;
+        range.length++;
+      }
+    }
+    
+    [self.storage replaceCharactersInRange:range withString:@""];
+    
+    [newSelectedRanges addObject:[NSValue valueWithRange:NSMakeRange(range.location, 0)]];
+    
+    rangeLocationDelta += (0 - range.length);
+  }
+  
+  self.selectedRanges = newSelectedRanges.copy;
+  [self updateLayer];
 }
 
 - (void)deleteForward:(id)sender
@@ -477,7 +494,7 @@ static NSCharacterSet *newlineCharacterSet;
 //  [self setSelectedRanges:selectedRanges];
 }
 
-- (void)setSelectedRanges:(NSArray *)ranges affinity:(NSSelectionAffinity)affinity stillSelecting:(BOOL)stillSelectingFlag
+- (void)setSelectedRanges:(NSArray *)ranges
 {
   // check for illegal ranges
   NSUInteger rangeCount = ranges.count;
@@ -583,9 +600,9 @@ static NSCharacterSet *newlineCharacterSet;
       distance = MIN(distance, labs(reusableRange.location - (range.location + reusableRange.length)));
       distance = MIN(distance, labs((reusableRange.location + reusableRange.length) - (range.location + reusableRange.length)));
       
-      if (affinity == NSSelectionAffinityDownstream && (reusableRange.location + reusableRange.length) < range.location) {
+      if (self.selectionAffinity == NSSelectionAffinityDownstream && (reusableRange.location + reusableRange.length) < range.location) {
         distance++;
-      } else if (affinity == NSSelectionAffinityUpstream && (reusableRange.location + reusableRange.length) > range.location) {
+      } else if (self.selectionAffinity == NSSelectionAffinityUpstream && (reusableRange.location + reusableRange.length) > range.location) {
         distance++;
       }
       
@@ -816,14 +833,23 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)insertText:(id)insertString
 {
-  NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
-//  NSString *string = [insertString isKindOfClass:[NSAttributedString class]] ? [insertString string] : insertString;
-//  
-//  [self.storage replaceCharactersInRange:NSMakeRange(self.insertionPointOffset, 0) withString:string];
-//  [self updateLayer];
-//  
-//  [self pauseInsertionPointBlinking];
-//  self.insertionPointOffset = self.insertionPointOffset + string.length;
+  NSString *string = [insertString isKindOfClass:[NSAttributedString class]] ? [insertString string] : insertString;
+  
+  NSInteger rangeLocationDelta = 0;
+  NSMutableArray *newSelectedRanges = [NSMutableArray arrayWithCapacity:self.selectedRanges.count];
+  for (NSValue *rangeValue in self.selectedRanges) {
+    NSRange range = rangeValue.rangeValue;
+    range.location += rangeLocationDelta;
+    
+    [self.storage replaceCharactersInRange:range withString:string];
+    
+    [newSelectedRanges addObject:[NSValue valueWithRange:NSMakeRange(range.location + string.length, 0)]];
+    
+    rangeLocationDelta += (string.length - range.length);
+  }
+  
+  self.selectedRanges = newSelectedRanges.copy;
+  [self updateLayer];
 }
 
 - (void)insertSnippet:(NSString *)snippet
@@ -927,7 +953,7 @@ static NSCharacterSet *newlineCharacterSet;
           [self moveSubwordBackward:self];
         }
       } else {
-        [self moveBackward:self];
+        [self moveBackward:self extendSelection:((theEvent.modifierFlags & NSShiftKeyMask) > 0)];
       }
       return;
     case NSRightArrowFunctionKey:;
@@ -1134,7 +1160,7 @@ static NSCharacterSet *newlineCharacterSet;
 //  return newInsertionPoint + lineRange.location;
 }
 
-- (void)moveBackward:(id)sender
+- (void)moveBackward:(id)sender extendSelection:(BOOL)extend
 {
   NSMutableArray *newRanges = [NSMutableArray arrayWithCapacity:self.selectedRanges.count];
   
@@ -1146,15 +1172,45 @@ static NSCharacterSet *newlineCharacterSet;
       continue;
     }
     
-    range.location--;
-    range.length = 0;
-    if ([self.storage positionSplitsWindowsNewline:range.location])
-      range.location--;
+    if (extend) {
+      if (range.length == 0) {
+        range.location--;
+        range.length++;
+        
+        if ([self.storage positionSplitsWindowsNewline:range.location]) {
+          range.location--;
+          range.length++;
+        }
+        
+        self.selectionAffinity = NSSelectionAffinityUpstream;
+      } else {
+        if (self.selectionAffinity == NSSelectionAffinityDownstream) {
+          range.length--;
+        } else {
+          range.location--;
+          range.length++;
+          
+          if ([self.storage positionSplitsWindowsNewline:range.location]) {
+            range.location--;
+            range.length++;
+          }
+        }
+      }
+    } else {
+      if (range.length == 0) {
+        range.location--;
+        if ([self.storage positionSplitsWindowsNewline:range.location])
+          range.location--;
+      } else {
+        range.length = 0;
+      }
+    }
+    
     
     [newRanges addObject:[NSValue valueWithRange:range]];
   }
   
-  [self setSelectedRanges:newRanges.copy affinity:NSSelectionAffinityUpstream stillSelecting:NO];
+  self.selectedRanges = newRanges.copy;
 }
 
 - (void)moveForward:(id)sender extendSelection:(BOOL)extend
@@ -1170,16 +1226,30 @@ static NSCharacterSet *newlineCharacterSet;
     }
     
     if (extend) {
-      range.length++;
+      if (range.length == 0) {
+        range.length++;
+        self.selectionAffinity = NSSelectionAffinityDownstream;
+      } else {
+        if (self.selectionAffinity == NSSelectionAffinityDownstream) {
+          range.length++;
+        } else {
+          range.location++;
+          range.length--;
+        }
+      }
     } else {
-      range.location++;
-      range.length = 0;
+      if (range.length > 0) {
+        range.location = range.location + range.length;
+        range.length = 0;
+      } else {
+        range.location++;
+      }
     }
     
     [newRanges addObject:[NSValue valueWithRange:range]];
   }
   
-  [self setSelectedRanges:newRanges.copy affinity:NSSelectionAffinityUpstream stillSelecting:NO];
+  self.selectedRanges = newRanges.copy;
 }
 
 - (void)moveUp:(id)sender
@@ -1207,7 +1277,7 @@ static NSCharacterSet *newlineCharacterSet;
     [newRanges addObject:[NSValue valueWithRange:range]];
   }
   
-  [self setSelectedRanges:newRanges.copy affinity:NSSelectionAffinityUpstream stillSelecting:NO];
+  self.selectedRanges = newRanges.copy;
 }
 
 - (void)moveDown:(id)sender
@@ -1236,7 +1306,7 @@ static NSCharacterSet *newlineCharacterSet;
     [newRanges addObject:[NSValue valueWithRange:range]];
   }
   
-  [self setSelectedRanges:newRanges.copy affinity:NSSelectionAffinityUpstream stillSelecting:NO];
+  self.selectedRanges = newRanges.copy;
 }
 
 - (void)moveToBeginningOfLine:(id)sender
@@ -1270,7 +1340,7 @@ static NSCharacterSet *newlineCharacterSet;
     [newSelectedRanges addObject:[NSValue valueWithRange:newRange]];
   }
   
-  [self setSelectedRanges:[newSelectedRanges copy]];
+  self.selectedRanges = newSelectedRanges.copy;
 }
 
 - (void)moveSubwordBackwardAndModifySelection:(id)sender
@@ -1285,7 +1355,7 @@ static NSCharacterSet *newlineCharacterSet;
     [newSelectedRanges addObject:[NSValue valueWithRange:newRange]];
   }
   
-  [self setSelectedRanges:[newSelectedRanges copy]];
+  self.selectedRanges = newSelectedRanges.copy;
 }
 
 - (void)moveSubwordForward:(id)sender
@@ -1300,7 +1370,7 @@ static NSCharacterSet *newlineCharacterSet;
     [newSelectedRanges addObject:[NSValue valueWithRange:newRange]];
   }
   
-  [self setSelectedRanges:[newSelectedRanges copy]];
+  self.selectedRanges = newSelectedRanges.copy;
 }
 
 - (void)moveSubwordForwardAndModifySelection:(id)sender
@@ -1315,7 +1385,7 @@ static NSCharacterSet *newlineCharacterSet;
     [newSelectedRanges addObject:[NSValue valueWithRange:newRange]];
   }
   
-  [self setSelectedRanges:[newSelectedRanges copy]];
+  self.selectedRanges = newSelectedRanges.copy;
 }
 
 - (void)deleteSubwordBackward:(id)sender
@@ -1402,7 +1472,7 @@ static NSCharacterSet *newlineCharacterSet;
 //    
 //    insertionOffset += insertString.length;
 //  }
-//  [self setSelectedRanges:[newSelectedRanges copy]];
+//  self.selectedRanges = newSelectedRanges.copy;
 }
 
 - (NSUInteger)characterPositionForPoint:(CGPoint)point
@@ -1760,7 +1830,7 @@ static NSCharacterSet *newlineCharacterSet;
     newSelectedRanges = @[[NSValue valueWithRange:NSMakeRange(characterOffset, 0)]];
   }
   
-  [self setSelectedRanges:newSelectedRanges affinity:NSSelectionAffinityDownstream stillSelecting:NO];
+  self.selectedRanges = newSelectedRanges;
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent
