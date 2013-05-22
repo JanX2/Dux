@@ -16,6 +16,7 @@
 #import "DuxPreferences.h"
 #import "DuxBundle.h"
 #import "DuxLine.h"
+#import "DuxTextViewSelection.h"
 
 static CGFloat leftGutter = 4;
 static CGFloat rightGutter = 4;
@@ -26,7 +27,7 @@ static CAKeyframeAnimation *insertionPointBlinkAnimation;
 
 @property NSDate *dateToResumeInsertionPointBlinking;
 
-@property (readwrite,nonatomic) NSArray *selectedRanges;
+@property (readwrite,nonatomic) NSArray *selections;
 @property (readwrite) NSArray *selectionLayers;
 @property (readwrite) NSSelectionAffinity selectionAffinity;
 
@@ -125,6 +126,16 @@ static NSCharacterSet *newlineCharacterSet;
 //   NSUInteger index = (self.selectedRange.location > 0) ? self.selectedRange.location : 0;
 //   index = MIN(index, self.textStorage.length - 1);
 //   [self setTypingAttributes:[self.textStorage attributesAtIndex:index effectiveRange:NULL]];
+}
+
+- (NSArray *)selectedRanges
+{
+  NSMutableArray *ranges = [NSMutableArray arrayWithCapacity:self.selections.count];
+  for (DuxTextViewSelection *selection in self.selections) {
+    [ranges addObject:[NSValue valueWithRange:selection.range]];
+  }
+  
+  return ranges.copy;
 }
 
 - (void)insertNewline:(id)sender
@@ -496,41 +507,50 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)setSelectedRanges:(NSArray *)ranges
 {
+  NSMutableArray *selections = [[NSMutableArray alloc] initWithCapacity:ranges.count];
+  for (NSValue *rangeValue in ranges) {
+    [selections addObject:[DuxTextViewSelection selectionWithRange:rangeValue.rangeValue inTextView:self]];
+  }
+  
+  [self setSelections:selections];
+}
+
+- (void)setSelections:(NSArray *)selections
+{
   // check for illegal ranges
-  NSUInteger rangeCount = ranges.count;
+  NSUInteger rangeCount = selections.count;
   for (NSUInteger rangeIndex = 0; rangeIndex < rangeCount; rangeIndex++) {
-    NSRange range = ((NSValue *)[ranges objectAtIndex:rangeIndex]).rangeValue;
+    DuxTextViewSelection *selection = [selections objectAtIndex:rangeIndex];
     
-    if ([self.storage positionSplitsWindowsNewline:range.location]) {
+    if ([self.storage positionSplitsWindowsNewline:selection.range.location]) {
+      NSRange range = selection.range;
       range.location++;
-      range.length--;
+      if (range.length > 0)
+        range.length--;
       
-      NSMutableArray *mutableRanges = ranges.mutableCopy;
-      [mutableRanges replaceObjectAtIndex:rangeIndex withObject:[NSValue valueWithRange:range]];
-      ranges = mutableRanges.copy;
+      selection.range = range;
     }
     
-    if ([self.storage positionSplitsWindowsNewline:range.location + range.length]) {
+    if ([self.storage positionSplitsWindowsNewline:selection.maxRange]) {
+      NSRange range = selection.range;
       range.length++;
       
-      NSMutableArray *mutableRanges = ranges.mutableCopy;
-      [mutableRanges replaceObjectAtIndex:rangeIndex withObject:[NSValue valueWithRange:range]];
-      ranges = mutableRanges.copy;
+      selection.range = range;
     }
   }
   
   
   // create new selection range layers, attempting to re-use existing layers intelligently (so we can move them with animation)
-  NSMutableArray *newSelections = [[NSMutableArray alloc] initWithCapacity:ranges.count];
-  NSMutableArray *rangesNeedingLayers = ranges.mutableCopy;
+  NSMutableArray *newSelections = [[NSMutableArray alloc] initWithCapacity:selections.count];
+  NSMutableArray *selectionsNeedingLayers = selections.mutableCopy;
   
   NSMutableArray *reusableSelectionLayers = self.selectionLayers.mutableCopy;
   NSMutableArray *reusableSelectionLayerRanges = self.selectedRanges.mutableCopy;
   
   
   // re-use layers that overlap the new ranges
-  for (NSUInteger rangeIndex = 0; rangeIndex < rangesNeedingLayers.count; rangeIndex++) {
-    NSRange range = ((NSValue *)[rangesNeedingLayers objectAtIndex:rangeIndex]).rangeValue;
+  for (NSUInteger rangeIndex = 0; rangeIndex < selectionsNeedingLayers.count; rangeIndex++) {
+    NSRange range = ((DuxTextViewSelection *)[selectionsNeedingLayers objectAtIndex:rangeIndex]).range;
     
     BOOL foundMatch = NO;
     for (NSUInteger reusableRangeIndex = 0; reusableRangeIndex < reusableSelectionLayerRanges.count; reusableRangeIndex++) {
@@ -580,14 +600,14 @@ static NSCharacterSet *newlineCharacterSet;
       }
     }
     if (foundMatch) {
-      [rangesNeedingLayers removeObjectAtIndex:rangeIndex];
+      [selectionsNeedingLayers removeObjectAtIndex:rangeIndex];
       rangeIndex--;
     }
   }
   
   // re-use layers that are closest to the new ranges (if two ranges are equal distance apart, slectionAffinity defines the one we use
-  for (NSUInteger rangeIndex = 0; rangeIndex < rangesNeedingLayers.count; rangeIndex++) {
-    NSRange range = ((NSValue *)[rangesNeedingLayers objectAtIndex:rangeIndex]).rangeValue;
+  for (NSUInteger rangeIndex = 0; rangeIndex < selectionsNeedingLayers.count; rangeIndex++) {
+    NSRange range = ((DuxTextViewSelection *)[selectionsNeedingLayers objectAtIndex:rangeIndex]).range;
     
     BOOL foundLayer = NO;
     NSInteger closestRangeDistance = LONG_MAX;
@@ -672,7 +692,7 @@ static NSCharacterSet *newlineCharacterSet;
       [reusableSelectionLayers removeObjectAtIndex:closestRangeIndex];
       [reusableSelectionLayerRanges removeObjectAtIndex:closestRangeIndex];
       
-      [rangesNeedingLayers removeObjectAtIndex:rangeIndex];
+      [selectionsNeedingLayers removeObjectAtIndex:rangeIndex];
       rangeIndex--;
     }
   }
@@ -683,8 +703,8 @@ static NSCharacterSet *newlineCharacterSet;
   }
   
   // insert new layers that we couldn't re-use
-  for (NSUInteger rangeIndex = 0; rangeIndex < rangesNeedingLayers.count; rangeIndex++) {
-    NSRange range = ((NSValue *)[rangesNeedingLayers objectAtIndex:rangeIndex]).rangeValue;
+  for (NSUInteger rangeIndex = 0; rangeIndex < selectionsNeedingLayers.count; rangeIndex++) {
+    NSRange range = ((DuxTextViewSelection *)[selectionsNeedingLayers objectAtIndex:rangeIndex]).range;
     
     CALayer *layer = [[CALayer alloc] init];
     layer.anchorPoint = CGPointMake(0, 0);
@@ -751,7 +771,11 @@ static NSCharacterSet *newlineCharacterSet;
   }];
   
   // apply the new ranges and layers
-  _selectedRanges = [newSelections valueForKey:@"range"];
+  NSMutableArray *newTextViewSelections = [NSMutableArray arrayWithCapacity:newSelections.count];
+  for (NSDictionary *selection in newSelections) {
+    [newTextViewSelections addObject:[DuxTextViewSelection selectionWithRange:[[selection valueForKey:@"range"] rangeValue] inTextView:self]];
+  }
+  _selections = newTextViewSelections.copy;
   self.selectionLayers = [newSelections valueForKey:@"layer"];
   
   // pause insertion point blinking, and update layers

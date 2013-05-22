@@ -29,7 +29,6 @@
 @property NSUInteger pageGuidePosition;
 @property NSColor *backgroundColor;
 @property NSColor *insertionPointColor;
-@property (readonly,nonatomic) NSArray *selectedRanges;
 @property DuxTextStorage *storage;
 @property NSString *string;
 
