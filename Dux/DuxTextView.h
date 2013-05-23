@@ -32,7 +32,7 @@
 @property DuxTextStorage *storage;
 @property NSString *string;
 
-@property CGFloat scrollPosition; // character offeset of the first visible line, as a float so we can be part way through a character (we actually scroll in pixels as a CGFloat, not in characters)
+@property NSUInteger scrollPosition; // character offeset of the first visible line
 
 @property (strong) IBOutlet NSPanel *goToLinePanel;
 @property (weak) IBOutlet NSSearchField *goToLineSearchField;

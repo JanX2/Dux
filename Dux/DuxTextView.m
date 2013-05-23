@@ -1494,10 +1494,6 @@ static NSCharacterSet *newlineCharacterSet;
   CGFloat yOffset = self.frame.size.height;
   
   DuxLine *line = [self.storage lineAtCharacterPosition:self.scrollPosition];
-  if (line.range.length > 0) {
-    yOffset += ([line heightWithWidth:lineWidth] * ((self.scrollPosition - line.range.location) / line.range.length));
-  }
-  yOffset = round(yOffset);
   
   NSMutableSet *lineLayers = [[NSMutableSet alloc] init];
   BOOL isFirst = YES;
@@ -1510,7 +1506,8 @@ static NSCharacterSet *newlineCharacterSet;
     if (!line)
       break;
     
-    CGFloat lineHeight = [line heightWithWidth:lineWidth];
+    [line setFrameWithTopLeftOrigin:CGPointMake(leftGutter, yOffset) width:lineWidth];
+    CGFloat lineHeight = line.frame.size.height;
     
     BOOL heightChanged = (fabs(line.frame.size.height - lineHeight) > 0.1);
     if (heightChanged && !willAnimate) {
@@ -1846,7 +1843,7 @@ static NSCharacterSet *newlineCharacterSet;
   
   if (fabs(newPosition - oldPosition) > 0.1) {
 //    DuxLine *line = [self.storage lineAtCharacterPosition:newPosition];
-    self.scrollPosition = newPosition;
+    self.scrollPosition = lround(newPosition);
     
     // set our scrollDelta to how far along the line we tried to scroll
 //    self.scrollDelta = 0 - ([line heightWithWidth:self.frame.size.width attributes:self.textAttributes] * ((newPosition - line.range.location) / line.range.length));

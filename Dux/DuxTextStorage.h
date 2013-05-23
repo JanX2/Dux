@@ -31,6 +31,8 @@
 
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string;
 
+- (void)setMutableString:(NSMutableString *)string; // unlike setting the string directly, this allows you to give the text storage a mutable string that it will use internally. you must not modify this string after providing it, except via the storage
+
 - (DuxLine *)lineAtCharacterPosition:(NSUInteger)characterPosition;
 - (DuxLine *)lineBeforeLine:(DuxLine *)line;
 - (DuxLine *)lineAfterLine:(DuxLine *)line;

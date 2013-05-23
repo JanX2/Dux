@@ -56,6 +56,15 @@ static NSCharacterSet *newlineCharacters;
   return contents.length;
 }
 
+- (void)setMutableString:(NSMutableString *)string
+{
+  contents = string;
+  
+  [lines setCount:0];
+  [lines compact];
+  unsafeLinesOffset = 0;
+}
+
 - (void)setString:(NSString *)string
 {
   contents = string.mutableCopy;

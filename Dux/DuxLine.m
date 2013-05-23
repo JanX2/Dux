@@ -110,30 +110,39 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   self.elements = mutableElements.copy;
   
   [self createStringToDraw];
-  framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
   typesetter = CTTypesetterCreateWithAttributedString((__bridge CFAttributedStringRef)(stringToDraw));
   
   return self;
 }
 
-- (void)dealloc
+- (void)setFrameWithTopLeftOrigin:(NSPoint)point width:(CGFloat)width
 {
-  free(lineOrigins);
-}
-
-- (void)setFrame:(CGRect)frame
-{
-  [super setFrame:frame];
+  CGFloat height;
+  if (fabs(self.frame.size.width) < 0.1 || fabs(width - self.frame.size.width) > 0.1) {
+    // Find a break for line from the beginning of the string to the given width.
+    CFIndex start = 0;
+    height = 0;
+    CGFloat maxHeight = (DUX_LINE_HEIGHT * (DUX_LINE_MAX_WRAPPED_LINES + 1)) - 1; // -1px incase of floating point error
+    CGFloat lineWidth = width - DUX_LINE_NUMBER_WIDTH;
+    lineCount = 0;
+    CFMutableArrayRef mutableLines = CFArrayCreateMutable(NULL, DUX_LINE_MAX_WRAPPED_LINES, NULL);
+    while (start < stringToDraw.length && height < maxHeight) {
+      CFIndex count = CTTypesetterSuggestLineBreak(typesetter, start, lineWidth);
+      
+      CFArrayAppendValue(mutableLines, CTLineCreateWithAttributedString(CFAttributedStringCreateWithSubstring(NULL, (__bridge CFAttributedStringRef)(stringToDraw), CFRangeMake(start, count))));
+      lineOrigins[lineCount] = CGPointMake(0, height);
+      
+      height += DUX_LINE_HEIGHT;
+      start += count;
+      lineCount++;
+    }
+    lines = CFArrayCreateCopy(NULL, mutableLines);
+    [self setNeedsDisplay];
+  } else { // changed origin only.
+    height = self.frame.size.height;
+  }
   
-  contentPath = CGPathCreateWithRect(CGRectMake(self.bounds.origin.x + DUX_LINE_NUMBER_WIDTH, 0, self.bounds.size.width - DUX_LINE_NUMBER_WIDTH, self.bounds.size.height), NULL);
-  contentFrame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), contentPath, NULL);
-  
-  lines = CTFrameGetLines(contentFrame);
-  lineCount = CFArrayGetCount(lines);
-  
-  free(lineOrigins);
-  lineOrigins = malloc(sizeof(CGPoint) * lineCount);
-  CTFrameGetLineOrigins(contentFrame, CFRangeMake(0, 0), lineOrigins);
+  [super setFrame:CGRectMake(point.x, point.y - height, width, height)];
 }
 
 - (void)createStringToDraw
@@ -155,35 +164,26 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     [attributes setObject:paragraphStyle forKey:NSParagraphStyleAttributeName];
   }
   
+  NSRange stringToDrawRange = NSMakeRange(self.range.location, MIN(self.range.length, DUX_LINE_MAX_STRING_TO_DRAW_LENGTH));
   if (self.range.length > 0) {
-    stringToDraw = [[NSMutableAttributedString alloc] initWithString:[self.storage.string substringWithRange:self.range] attributes:attributes];
+    stringToDraw = [[NSMutableAttributedString alloc] initWithString:[self.storage.string substringWithRange:stringToDrawRange] attributes:attributes];
   } else {
     stringToDraw = [[NSMutableAttributedString alloc] initWithString:@" " attributes:attributes]; // empty line has zero height, so we force a space
   }
   
   // apply syntax colors
-  
-  //  [stringToDraw addAttribute:NSBackgroundColorAttributeName value:[NSColor redColor] range:NSMakeRange(0, stringToDraw.length)];
   for (NSDictionary *elementRecord in self.elements) {
-    //    NSLog(@"%@ %@ %@", [[elementRecord valueForKey:@"element"] color], [elementRecord valueForKey:@"start"], [elementRecord valueForKey:@"length"]);
-    [stringToDraw addAttribute:NSForegroundColorAttributeName value:(id)[[elementRecord valueForKey:@"element"] color].CGColor range:NSMakeRange([[elementRecord valueForKey:@"start"] unsignedIntegerValue], [[elementRecord valueForKey:@"length"] unsignedIntegerValue])];
-  }
-}
-
-- (CGFloat)heightWithWidth:(CGFloat)width
-{
-  // Find a break for line from the beginning of the string to the given width.
-  CFIndex start = 0;
-  CGFloat height = 0;
-  CGFloat maxHeight = (DUX_LINE_HEIGHT * (DUX_LINE_MAX_WRAPPED_LINES + 1));
-  while (start < self.range.length && height < maxHeight) {
-    CFIndex count = CTTypesetterSuggestLineBreak(typesetter, start, width);
+    NSRange elementRange = NSMakeRange([[elementRecord valueForKey:@"start"] unsignedIntegerValue], [[elementRecord valueForKey:@"length"] unsignedIntegerValue]);
+    if (elementRange.location >= stringToDrawRange.length)
+      break;
     
-    height += DUX_LINE_HEIGHT;
-    start += count;
+    if (elementRange.location + elementRange.length > stringToDrawRange.length)
+      elementRange.length = stringToDrawRange.length - elementRange.location;
+    if (elementRange.length == 0)
+      break;
+    
+    [stringToDraw addAttribute:NSForegroundColorAttributeName value:(id)[[elementRecord valueForKey:@"element"] color].CGColor range:elementRange];
   }
-  
-  return height;
 }
 
 - (CGPoint)pointForCharacterOffset:(NSUInteger)characterOffset

@@ -10,20 +10,9 @@
 
 #import "NSStringDuxAdditions.h"
 
-@implementation NSString (NSStringDuxAdditions)
+@implementation NSMutableString (NSMutableStringDuxAdditions)
 
-static NSCharacterSet *newlineCharacterSet;
-static NSCharacterSet *nonWhitespaceCharacterSet;
-
-+ (void)initialize
-{
-  [super initialize];
-  
-  newlineCharacterSet = [NSCharacterSet newlineCharacterSet];
-  nonWhitespaceCharacterSet = [[NSCharacterSet whitespaceCharacterSet] invertedSet];
-}
-
-+ (id)stringWithUnknownData:(NSData *)data usedEncoding:(NSStringEncoding *)enc
++ (NSMutableString *)mutableStringWithUnknownData:(NSData *)data usedEncoding:(NSStringEncoding *)enc
 {
   // list encodings, in the order we should check (the order was chosen after trial/error)
   NSUInteger encodingsCount = 6;
@@ -36,10 +25,10 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     NSNonLossyASCIIStringEncoding       //  Non-lossy ASCII
   };
   
-  NSString *string = nil;
+  NSMutableString *string = nil;
   NSUInteger encodingIndex;
   for (encodingIndex = 0; encodingIndex < encodingsCount && !string; encodingIndex++) {
-    string = [[NSString alloc] initWithData:data encoding:encodings[encodingIndex]];
+    string = [[NSMutableString alloc] initWithData:data encoding:encodings[encodingIndex]];
     
     if (string) {
       *enc = encodings[encodingIndex];
@@ -48,6 +37,21 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   }
   
   return nil;
+}
+
+@end
+
+@implementation NSString (NSStringDuxAdditions)
+
+static NSCharacterSet *newlineCharacterSet;
+static NSCharacterSet *nonWhitespaceCharacterSet;
+
++ (void)initialize
+{
+  [super initialize];
+  
+  newlineCharacterSet = [NSCharacterSet newlineCharacterSet];
+  nonWhitespaceCharacterSet = [[NSCharacterSet whitespaceCharacterSet] invertedSet];
 }
 
 - (NSRange)rangeOfLineAtOffset:(NSUInteger)location

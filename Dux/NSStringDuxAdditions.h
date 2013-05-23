@@ -19,9 +19,13 @@ enum {
 };
 typedef NSUInteger DuxNewlineOptions;
 
-@interface NSString (NSStringDuxAdditions)
+@interface NSMutableString (NSMutableStringDuxAdditions)
 
-+ (id)stringWithUnknownData:(NSData *)data usedEncoding:(NSStringEncoding *)enc;
++ (NSMutableString *)mutableStringWithUnknownData:(NSData *)data usedEncoding:(NSStringEncoding *)enc;
+
+@end
+
+@interface NSString (NSStringDuxAdditions)
 
 - (DuxStringLineEnumerator *)lineEnumeratorForLinesInRange:(NSRange)range;
 - (NSRange)rangeOfLineAtOffset:(NSUInteger)location;

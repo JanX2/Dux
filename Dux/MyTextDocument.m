@@ -145,7 +145,7 @@ if ([DuxPreferences editorDarkMode]) {
 - (BOOL)readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError **)outError
 {
   NSStringEncoding encoding;
-  NSString *textContentToLoad = [NSString stringWithUnknownData:data usedEncoding:&encoding];
+  NSMutableString *textContentToLoad = [NSMutableString mutableStringWithUnknownData:data usedEncoding:&encoding];
   if (!textContentToLoad) {
     *outError = [NSError errorWithDomain:NSCocoaErrorDomain code:NSFileReadUnknownError userInfo:nil];
     return NO;
@@ -161,7 +161,8 @@ if ([DuxPreferences editorDarkMode]) {
     break;
   }
   
-  self.textView.string = textContentToLoad;
+//  self.textView.string = textContentToLoad;
+  [self.textView.storage setMutableString:textContentToLoad];
   //  [textContentStorage replaceCharactersInRange:NSMakeRange(0, textContentStorage.length) withAttributedString:[[NSAttributedString alloc] initWithString:textContentToLoad attributes:@{NSFontAttributeName:[DuxPreferences editorFont]}]];
   
   // set activeNewlineStyle to the first newline in the document
