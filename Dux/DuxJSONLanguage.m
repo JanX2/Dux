@@ -49,8 +49,6 @@ static NSIndexSet *keywordIndexSet = nil;
 
 + (BOOL)isDefaultLanguageForURL:(NSURL *)URL textContents:(NSString *)textContents
 {
-  return NO;
-  
   static NSArray *extensions = nil;
   if (!extensions) {
     extensions = [NSArray arrayWithObjects:@"json", nil];
