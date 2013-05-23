@@ -10,13 +10,13 @@
 // represents a selected range or insertion point in a text view
 //
 
-#import <Foundation/Foundation.h>
+#import <AppKit/AppKit.h>
 
 @class DuxTextView;
 
 @interface DuxTextViewSelection : NSObject
 
-@property NSRange range;
+@property (nonatomic) NSRange range;
 @property (weak) DuxTextView *view;
 
 @property (readonly) CALayer *layer;
@@ -26,5 +26,7 @@
 + (id)selectionWithRange:(NSRange)range inTextView:(DuxTextView *)view;
 
 - (id)initWithRange:(NSRange)range inTextView:(DuxTextView *)view; // designated
+
+- (void)updateLayer; // make sure the layer is in the right position and on top of other layers
 
 @end

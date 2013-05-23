@@ -62,6 +62,7 @@
 - (NSUInteger)findEndOfSubwordStartingAt:(NSUInteger)offset;
 
 - (void)selectionDidChange:(NSNotification *)notif;
+- (void)pauseInsertionPointBlinking;
 
 - (void)updateHighlightedElements;
 

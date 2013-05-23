@@ -11,7 +11,6 @@
 #import "DuxPreferences.h"
 #import "DuxLanguageElement.h"
 
-#define DUX_LINE_NUMBER_WIDTH 40
 static NSDictionary *lineNumberAttributes;
 
 @interface DuxLine ()
@@ -112,6 +111,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   
   [self createStringToDraw];
   framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)stringToDraw);
+  typesetter = CTTypesetterCreateWithAttributedString((__bridge CFAttributedStringRef)(stringToDraw));
   
   return self;
 }
@@ -172,13 +172,27 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
 
 - (CGFloat)heightWithWidth:(CGFloat)width
 {
-  CGSize lineSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(width - DUX_LINE_NUMBER_WIDTH, CGFLOAT_MAX), NULL);
+  // Find a break for line from the beginning of the string to the given width.
+  CFIndex start = 0;
+  CGFloat height = 0;
+  CGFloat maxHeight = (DUX_LINE_HEIGHT * (DUX_LINE_MAX_WRAPPED_LINES + 1));
+  while (start < self.range.length && height < maxHeight) {
+    CFIndex count = CTTypesetterSuggestLineBreak(typesetter, start, width);
+    
+    height += DUX_LINE_HEIGHT;
+    start += count;
+  }
   
-  return lineSize.height;
+  return height;
 }
 
 - (CGPoint)pointForCharacterOffset:(NSUInteger)characterOffset
 {
+  if (!lines) {
+    [NSException raise:@"Called Too Early" format:@"%s cannot be called when line metrix haven't been calculated yet. setFrame: must be called before pointForCharacterOffset:", __PRETTY_FUNCTION__];
+    return NSMakePoint(FLT_MAX, FLT_MAX);
+  }
+  
   if (characterOffset == self.range.location)
     return CGPointMake(DUX_LINE_NUMBER_WIDTH, 0);
   
@@ -199,7 +213,8 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     }
   }
   
-  return CGPointMake(FLT_MAX, 0); // should never reach this
+  [NSException raise:@"Illegal Offset" format:@"%s offset %lu is outside the bounds of line (%@).", __PRETTY_FUNCTION__, characterOffset, self];
+  return NSMakePoint(FLT_MAX, FLT_MAX);
 }
 
 - (NSUInteger)characterOffsetForPoint:(CGPoint)point
@@ -226,32 +241,58 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
 
 - (void)drawInContext:(CGContextRef)context
 {
-  [self drawInContext:context atYOffset:0 width:self.frame.size.width];
-}
-
-- (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth
-{
   CGColorRef bgColor = [NSColor whiteColor].CGColor;
   CGContextSetFillColorWithColor(context, bgColor);
   CGContextFillRect(context, self.bounds);
   
-  // calculate head indent
+  // Draw lines
+  CGContextSaveGState(context);
+  CGContextTranslateCTM(context, DUX_LINE_NUMBER_WIDTH, 0);
   
+  CFIndex lineIndex;
+  CGFloat frameHeight = self.frame.size.height;
+  for (lineIndex = 0; lineIndex < lineCount; lineIndex++) {
+    CGPoint lineOrigin = lineOrigins[lineIndex];
+    lineOrigin.y = (frameHeight - ((lineIndex + 1) * DUX_LINE_HEIGHT)) + 4;
+    
+    if (lineIndex == DUX_LINE_MAX_WRAPPED_LINES) {
+      NSMutableParagraphStyle *paragraphStyle = [[[NSParagraphStyle alloc] init] mutableCopy];
+      [paragraphStyle setAlignment:NSCenterTextAlignment];
+      
+      NSDictionary *errorAttributes = [[NSDictionary alloc] initWithObjectsAndKeys:[NSFont fontWithName:@"Source Code Pro" size:10], NSFontAttributeName,
+                                       [NSColor colorWithCalibratedRed:1 green:1 blue:1 alpha:1].CGColor, NSForegroundColorAttributeName,
+                                       paragraphStyle, NSParagraphStyleAttributeName,
+                                       nil];
+      
+      NSAttributedString *lineNumberString = [[NSAttributedString alloc] initWithString:@"!! MAX LINE LENGTH EXCEEDED !!" attributes:errorAttributes]; // empty line has zero height, so we force a space
+      CTFramesetterRef lineNumberFramesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)lineNumberString);
+      
+      NSRect lineRect = NSMakeRect(lineOrigin.x, lineOrigin.y, self.bounds.size.width - lineOrigin.x, 14);
+      CGContextSetRGBFillColor(context, 1, 0, 0, 1);
+      CGContextFillRect(context, lineRect);
+      
+      CGPathRef lineNumberPath = CGPathCreateWithRect(lineRect, NULL);
+      CTFrameRef lineNumberFrame = CTFramesetterCreateFrame(lineNumberFramesetter, CFRangeMake(0, 0), lineNumberPath, NULL);
+      CTFrameDraw(lineNumberFrame, context);
+      CFRelease(lineNumberPath);
+      break;
+    }
+    
+    CTLineRef line = CFArrayGetValueAtIndex(lines, lineIndex);
+    
+    CGContextSetTextPosition(context, lineOrigin.x, lineOrigin.y);
+    CTLineDraw(line, context);
+    
+  }
   
-  //Create Frame
-  CGFloat lineHeight = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, self.range.length), nil, CGSizeMake(lineWidth - DUX_LINE_NUMBER_WIDTH, CGFLOAT_MAX), NULL).height;
-  CGRect lineRect = (CGRect){{DUX_LINE_NUMBER_WIDTH, 0}, {lineWidth - DUX_LINE_NUMBER_WIDTH, lineHeight}};
-  lineRect.origin.y = self.frame.size.height - lineRect.size.height;
-  
-  //Draw Frame
-  CTFrameDraw(contentFrame, context);
+  CGContextRestoreGState(context);
   
   // draw line number
   if (self.lineNumber != NSUIntegerMax) {
     NSAttributedString *lineNumberString = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%lu", self.lineNumber] attributes:lineNumberAttributes]; // empty line has zero height, so we force a space
     CTFramesetterRef lineNumberFramesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)lineNumberString);
     
-    lineRect.origin.x = 0;
+    NSRect lineRect = self.bounds;
     lineRect.origin.y -= 2;
     lineRect.size.width = DUX_LINE_NUMBER_WIDTH - 10;
     CGPathRef lineNumberPath = CGPathCreateWithRect(lineRect, NULL);
@@ -259,9 +300,6 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
     CTFrameDraw(lineNumberFrame, context);
     CFRelease(lineNumberPath);
   }
-  
-  // move to next line
-  return yOffset - lineHeight;
 }
 
 - (NSString *)description

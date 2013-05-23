@@ -8,11 +8,16 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+#define DUX_LINE_NUMBER_WIDTH 40
+#define DUX_LINE_HEIGHT 17
+#define DUX_LINE_MAX_WRAPPED_LINES 10
+
 @class DuxTextStorage;
 
 @interface DuxLine : CALayer
 {
   NSMutableAttributedString *stringToDraw;
+  CTTypesetterRef typesetter;
   CTFramesetterRef framesetter;
   
   CGPathRef contentPath;
@@ -33,7 +38,5 @@
 
 - (CGPoint)pointForCharacterOffset:(NSUInteger)characterOffset; // char offset relative to entire storage. point relative to this line's frame
 - (NSUInteger)characterOffsetForPoint:(CGPoint)point; // char offset relative to entire storage. point relative to this line's frame
-
-- (CGFloat)drawInContext:(CGContextRef)context atYOffset:(CGFloat)yOffset width:(CGFloat)lineWidth;
 
 @end
