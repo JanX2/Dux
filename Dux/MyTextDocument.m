@@ -135,9 +135,9 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (BOOL)writeToURL:(NSURL *)absoluteURL ofType:(NSString *)typeName error:(NSError **)outError
 {
-  if (self.fileContentsWatcher) {
-    [self.fileContentsWatcher ignoreNewFileContents:[self dataOfType:typeName error:NULL]];
-  }
+//  if (self.fileContentsWatcher) {
+//    [self.fileContentsWatcher ignoreNewFileContents:[self dataOfType:typeName error:NULL]];
+//  }
   
   return [super writeToURL:absoluteURL ofType:typeName error:outError];
 }
@@ -173,11 +173,11 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (void)setFileURL:(NSURL *)url
 {
-  if (self.fileContentsWatcher) {
-    self.fileContentsWatcher.url = url;
-  } else {
-    self.fileContentsWatcher = [[DuxFileContentsWatcher alloc] initWithURL:url delegate:self];
-  }
+//  if (self.fileContentsWatcher) {
+//    self.fileContentsWatcher.url = url;
+//  } else {
+//    self.fileContentsWatcher = [[DuxFileContentsWatcher alloc] initWithURL:url delegate:self];
+//  }
   
   [super setFileURL:url];
 }

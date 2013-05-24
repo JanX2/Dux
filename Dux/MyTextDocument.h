@@ -24,7 +24,7 @@
 @property (nonatomic, strong) NSTextStorage *textStorage;
 @property (nonatomic, strong) DuxTextView *textView;
 @property NSStringEncoding stringEncoding;
-@property (nonatomic, strong) DuxFileContentsWatcher *fileContentsWatcher;
+//@property (nonatomic, strong) DuxFileContentsWatcher *fileContentsWatcher;
 
 
 // Newline style to be used when inserting new text.
