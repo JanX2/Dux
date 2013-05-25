@@ -15,7 +15,6 @@ static NSDictionary *lineNumberAttributes;
 
 @interface DuxLine ()
 
-@property (weak) DuxTextStorage *storage;
 @property NSRange range;
 @property NSUInteger lineNumber;
 
@@ -287,7 +286,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"<DuxLine %lu,%lu>: \"%@\"", (unsigned long)self.range.location, (unsigned long)self.range.length, CFAttributedStringGetString([self.storage substringWithByteRange:self.range])];
+  return [NSString stringWithFormat:@"<DuxLine %lu,%lu>: \"%@\"", (unsigned long)self.range.location, (unsigned long)self.range.length, stringToDraw];
 }
 
 @end

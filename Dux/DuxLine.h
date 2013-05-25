@@ -23,7 +23,6 @@
 
 - (id)initWithString:(CFAttributedStringRef)string byteRange:(NSRange)range;
 
-@property (readonly, weak) DuxTextStorage *storage;
 @property (readonly) NSRange range;
 @property (readonly) NSUInteger lineNumber;
 

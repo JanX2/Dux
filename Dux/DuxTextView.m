@@ -1249,7 +1249,7 @@ static NSCharacterSet *newlineCharacterSet;
   for (NSValue *rangeValue in self.selectedRanges) {
     NSRange range = rangeValue.rangeValue;
     
-    DuxLine *currentLine = [self.storage lineAtCharacterPosition:range.location];
+    DuxLine *currentLine = [self.storage lineStartingAtByteLocation:range.location];
     DuxLine *newLine = [self.storage lineBeforeLine:currentLine];
 
     if (!newLine){
@@ -1277,7 +1277,7 @@ static NSCharacterSet *newlineCharacterSet;
   for (NSValue *rangeValue in self.selectedRanges) {
     NSRange range = rangeValue.rangeValue;
     
-    DuxLine *currentLine = [self.storage lineAtCharacterPosition:range.location];
+    DuxLine *currentLine = [self.storage lineStartingAtByteLocation:range.location];
     DuxLine *newLine = [self.storage lineAfterLine:currentLine];
     
     if (!newLine){
@@ -1488,12 +1488,11 @@ static NSCharacterSet *newlineCharacterSet;
 {
   [CATransaction begin];
   [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disable all animations. for now we assume only the line positions will change (don't want to animate that). any line height changes, we will animate
-  BOOL willAnimate = NO;
   
   CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
-  CGFloat yOffset = self.frame.size.height;
+  CGFloat yOffset = round(self.frame.size.height + self.scrollDelta);
   
-  DuxLine *line = [self.storage lineAtCharacterPosition:self.scrollPosition];
+  DuxLine *line = [self.storage lineStartingAtByteLocation:self.scrollPosition];
   
   NSMutableSet *lineLayers = [[NSMutableSet alloc] init];
   BOOL isFirst = YES;
@@ -1507,21 +1506,10 @@ static NSCharacterSet *newlineCharacterSet;
       break;
     
     [line setFrameWithTopLeftOrigin:CGPointMake(leftGutter, yOffset) width:lineWidth];
-    CGFloat lineHeight = line.frame.size.height;
-    
-    BOOL heightChanged = (fabs(line.frame.size.height - lineHeight) > 0.1);
-    if (heightChanged && !willAnimate) {
-      [CATransaction setValue: (id) kCFBooleanFalse forKey: kCATransactionDisableActions];
-      willAnimate = YES;
-    }
-    
-    line.frame = CGRectMake(leftGutter, yOffset - lineHeight, lineWidth, lineHeight);
-    if (heightChanged)
-      [line setNeedsDisplay];
     
     [lineLayers addObject:line];
     
-    yOffset -= lineHeight;
+    yOffset -= DUX_LINE_HEIGHT;
     yOffset = round(yOffset);
   }
   
@@ -1564,7 +1552,7 @@ static NSCharacterSet *newlineCharacterSet;
     NSRange range = selection.range;
     
     if (range.length == 0) {
-      DuxLine *insertionPointLine = [self.storage lineAtCharacterPosition:range.location];
+      DuxLine *insertionPointLine = [self.storage lineStartingAtByteLocation:range.location];
       CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:range.location];
       CGPoint destPoint = CGPointMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
                                       insertionPointLine.frame.origin.y + insertionPoint.y);
@@ -1820,22 +1808,110 @@ static NSCharacterSet *newlineCharacterSet;
   ((DuxTextViewSelection *)[self.selections objectAtIndex:0]).range = NSMakeRange(characterOffset, 0);
 }
 
-- (void)scrollWheel:(NSEvent *)theEvent
+//- (BOOL)wantsScrollEventsForSwipeTrackingOnAxis:(NSEventGestureAxis)axis
+//{
+//  return (axis == NSEventGestureAxisVertical);
+//}
+
+- (void)scrollWheel:(NSEvent *)event
 {
-  CGFloat oldPosition = self.scrollPosition;
-  CGFloat newPosition;
-  
-  newPosition = oldPosition - (theEvent.deltaY * 18);
-  if (newPosition < 0.1) {
-    newPosition = 0;
-  } else if (newPosition >= self.storage.length) {
-    newPosition = self.storage.length - 1;
+  NSEventPhase phase = event.phase;
+  if (event.momentumPhase != NSEventPhaseNone) {
+    phase = event.momentumPhase;
+    scrollInMomentumPhase = YES;
+  } else {
+    scrollInMomentumPhase = NO;
   }
   
-  if (fabs(newPosition - oldPosition) > 0.1) {
-    self.scrollPosition = lround(newPosition);
+  switch(phase) {
+    case NSEventPhaseEnded:
+    case NSEventPhaseCancelled: {
+      if (self.scrollPosition == 0 && self.scrollDelta < 0) {
+        [self scrollBy:self.scrollDelta animated:YES];
+      }
+      
+      // after a moment (to let animations finish) manually update the layer incase we screwed anything up with scrolling optimisaitons (root of all evil and all that)
+      double delayInSeconds = 0.25;
+      dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+      dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        [self updateLayer];
+      });
+      break;
+    }
+    default: {
+      CGFloat delta = event.scrollingDeltaY;
+      if (!event.hasPreciseScrollingDeltas)
+        delta *= DUX_LINE_HEIGHT;
+      
+      if (scrollInMomentumPhase && self.scrollPosition == 0 && self.scrollDelta - delta < 0)
+        return;
+      
+      [self scrollBy:delta animated:(!event.hasPreciseScrollingDeltas)]; // if we have precise scroll deltas, we want to scroll instantly
+    }
+  }
+}
+
+- (void)scrollBy:(CGFloat)delta animated:(BOOL)animated
+{
+  if (fabs(delta) < 0.1)
+    return;
+  
+  // did we overshoot the scroll position?
+  if (self.scrollPosition == 0 && self.scrollDelta - delta < 0) {
+    CGFloat overshootAmount = fabs(self.scrollDelta - delta);
+    delta -= (delta * (overshootAmount / 150));
+  }
+  
+  // convert pixel offset into our own internal representation (which is based on byte offsets in the document data)
+  self.scrollDelta -= delta;
+  
+//  [self updateLayer];
+//  return;
+  
+  // move all the layers, without animation for trackpads, with animation for mouse wheels
+  [CATransaction begin];
+  if (!animated)
+    [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions];
+  
+  for (CALayer *layer in self.layer.sublayers) {
+    CGRect frame = layer.frame;
+    frame.origin.y -= delta;
     
-    [self.layer setNeedsDisplay];
+    layer.frame = frame;
+  }
+  
+  [CATransaction commit];
+  
+  // add/remove lines as needed
+  while (self.scrollDelta > DUX_LINE_HEIGHT) {
+    DuxLine *thisLine = [self.storage lineStartingAtByteLocation:self.scrollPosition];
+    DuxLine *nextLine = [self.storage lineAfterLine:thisLine];
+    if (!nextLine)
+      break;
+    
+    for (DuxLine *possibleLineToRemove in self.layer.sublayers) {
+      if (![possibleLineToRemove isKindOfClass:[DuxLine class]])
+        continue;
+      
+      if (possibleLineToRemove.range.location == thisLine.range.location) {
+        [possibleLineToRemove removeFromSuperlayer];
+        break;
+      }
+    }
+    
+    self.scrollPosition = nextLine.range.location;
+    self.scrollDelta -= DUX_LINE_HEIGHT;
+  }
+  while (self.scrollDelta <= 0) {
+    DuxLine *nextLine = [self.storage lineBeforeLine:[self.storage lineStartingAtByteLocation:self.scrollPosition]];
+    if (!nextLine)
+      break;
+    
+    self.scrollPosition = nextLine.range.location;
+    self.scrollDelta += DUX_LINE_HEIGHT;
+    
+    [nextLine setFrameWithTopLeftOrigin:CGPointMake(leftGutter, round(self.frame.size.height + self.scrollDelta)) width:self.frame.size.width - leftGutter - rightGutter];
+    [self.layer addSublayer:nextLine];
   }
 }
 

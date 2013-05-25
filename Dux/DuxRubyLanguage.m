@@ -11,7 +11,7 @@
 #import "DuxRubyLanguage.h"
 #import "DuxRubyBaseElement.h"
 
-static NSRegularExpression *keywordsExpression;
+//static NSRegularExpression *keywordsExpression;
 static NSIndexSet *keywordIndexSet = nil;
 
 @implementation DuxRubyLanguage

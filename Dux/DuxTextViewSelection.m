@@ -43,7 +43,7 @@
   
   if (_range.length != range.length) {
     if (range.length == 0) {
-      DuxLine *insertionPointLine = [self.view.storage lineAtCharacterPosition:range.location];
+      DuxLine *insertionPointLine = [self.view.storage lineStartingAtByteLocation:range.location];
       CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:range.location];
       
       layer.frame = CGRectMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
@@ -52,9 +52,9 @@
                                17);
       layer.backgroundColor = CGColorCreateGenericRGB(0.11, 0.36, 0.93, 1.0);
     } else {
-      DuxLine *startPointLine = [self.view.storage lineAtCharacterPosition:range.location];
+      DuxLine *startPointLine = [self.view.storage lineStartingAtByteLocation:range.location];
       CGPoint startPoint = [startPointLine pointForCharacterOffset:range.location];
-      DuxLine *endPointLine = [self.view.storage lineAtCharacterPosition:range.location + range.length];
+      DuxLine *endPointLine = [self.view.storage lineStartingAtByteLocation:range.location + range.length];
       CGPoint endPoint = [endPointLine pointForCharacterOffset:range.location + range.length];
       
       layer.frame = CGRectMake(round(startPointLine.frame.origin.x + startPoint.x),
@@ -65,7 +65,7 @@
       [layer removeAnimationForKey:@"blink"];
     }
   } else {
-    DuxLine *insertionPointLine = [self.view.storage lineAtCharacterPosition:range.location];
+    DuxLine *insertionPointLine = [self.view.storage lineStartingAtByteLocation:range.location];
     CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:range.location];
     CGPoint destPoint = CGPointMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
                                     insertionPointLine.frame.origin.y + insertionPoint.y);
@@ -108,7 +108,7 @@
   layer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
   
   if (self.range.length == 0) {
-    DuxLine *insertionPointLine = [self.view.storage lineAtCharacterPosition:self.range.location];
+    DuxLine *insertionPointLine = [self.view.storage lineStartingAtByteLocation:self.range.location];
     CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:self.range.location];
     
     layer.frame = CGRectMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
@@ -125,9 +125,9 @@
     
     [layer addAnimation:animation forKey:@"opacity"];
   } else {
-    DuxLine *startPointLine = [self.view.storage lineAtCharacterPosition:self.range.location];
+    DuxLine *startPointLine = [self.view.storage lineStartingAtByteLocation:self.range.location];
     CGPoint startPoint = [startPointLine pointForCharacterOffset:self.range.location];
-    DuxLine *endPointLine = [self.view.storage lineAtCharacterPosition:self.range.location + self.range.length];
+    DuxLine *endPointLine = [self.view.storage lineStartingAtByteLocation:self.range.location + self.range.length];
     CGPoint endPoint = [endPointLine pointForCharacterOffset:self.range.location + self.range.length];
     
     layer.frame = CGRectMake(round(startPointLine.frame.origin.x + startPoint.x),
@@ -156,7 +156,7 @@
   }
     
   if (self.range.length == 0) {
-    DuxLine *insertionPointLine = [self.view.storage lineAtCharacterPosition:self.range.location];
+    DuxLine *insertionPointLine = [self.view.storage lineStartingAtByteLocation:self.range.location];
     CGPoint insertionPoint = [insertionPointLine pointForCharacterOffset:self.range.location];
     
     layer.frame = CGRectMake(round(insertionPointLine.frame.origin.x + insertionPoint.x),
@@ -165,9 +165,9 @@
                              17);
     layer.backgroundColor = CGColorCreateGenericRGB(0.11, 0.36, 0.93, 1.0);
   } else {
-    DuxLine *startPointLine = [self.view.storage lineAtCharacterPosition:self.range.location];
+    DuxLine *startPointLine = [self.view.storage lineStartingAtByteLocation:self.range.location];
     CGPoint startPoint = [startPointLine pointForCharacterOffset:self.range.location];
-    DuxLine *endPointLine = [self.view.storage lineAtCharacterPosition:self.range.location + self.range.length];
+    DuxLine *endPointLine = [self.view.storage lineStartingAtByteLocation:self.range.location + self.range.length];
     CGPoint endPoint = [endPointLine pointForCharacterOffset:self.range.location + self.range.length];
     
     layer.frame = CGRectMake(round(startPointLine.frame.origin.x + startPoint.x),

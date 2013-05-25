@@ -20,6 +20,8 @@
 	
   NSUInteger lastProcessLinesStringHash;
   NSUInteger lineCharacterIndexes[100000]; // characted index of every line. used to draw line numbers. Unused line indexes contain NSNotFound. We do not draw line numbers after 99,999 lines (too slow, and the gutter is too narrow to fit them anyway)
+  
+  BOOL scrollInMomentumPhase;
 }
 
 @property (weak) MyTextDocument *textDocument;
@@ -31,7 +33,8 @@
 @property NSColor *insertionPointColor;
 @property DuxTextStorage *storage;
 
-@property NSUInteger scrollPosition; // character offeset of the first visible line
+@property NSUInteger scrollPosition; // character offset of the first visible line
+@property CGFloat scrollDelta; // pixel offset to be added on top of scrollPosition, to allow for precise scrolling
 
 @property (strong) IBOutlet NSPanel *goToLinePanel;
 @property (weak) IBOutlet NSSearchField *goToLineSearchField;

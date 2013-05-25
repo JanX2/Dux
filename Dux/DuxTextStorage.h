@@ -33,7 +33,7 @@
 
 - (CFAttributedStringRef)substringWithByteRange:(NSRange)range;
 
-- (DuxLine *)lineAtCharacterPosition:(NSUInteger)characterPosition;
+- (DuxLine *)lineStartingAtByteLocation:(NSUInteger)byteLocation;
 - (DuxLine *)lineBeforeLine:(DuxLine *)line;
 - (DuxLine *)lineAfterLine:(DuxLine *)line;
 
