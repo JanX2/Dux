@@ -1784,18 +1784,6 @@ static NSCharacterSet *newlineCharacterSet;
   NSLog(@"not yet implemented: %s", __PRETTY_FUNCTION__);
 }
 
-- (NSString *)string
-{
-  return self.storage.string;
-}
-
-- (void)setString:(NSString *)string
-{
-  self.storage.string = string;
-  
-  [self.layer setNeedsDisplay];
-}
-
 - (void)mouseDown:(NSEvent *)event
 {
   // find the insertion point under the mouse
@@ -1838,15 +1826,14 @@ static NSCharacterSet *newlineCharacterSet;
   CGFloat newPosition;
   
   newPosition = oldPosition - (theEvent.deltaY * 18);
-  if (newPosition < 0.1)
+  if (newPosition < 0.1) {
     newPosition = 0;
+  } else if (newPosition >= self.storage.length) {
+    newPosition = self.storage.length - 1;
+  }
   
   if (fabs(newPosition - oldPosition) > 0.1) {
-//    DuxLine *line = [self.storage lineAtCharacterPosition:newPosition];
     self.scrollPosition = lround(newPosition);
-    
-    // set our scrollDelta to how far along the line we tried to scroll
-//    self.scrollDelta = 0 - ([line heightWithWidth:self.frame.size.width attributes:self.textAttributes] * ((newPosition - line.range.location) / line.range.length));
     
     [self.layer setNeedsDisplay];
   }

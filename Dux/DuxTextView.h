@@ -30,7 +30,6 @@
 @property NSColor *backgroundColor;
 @property NSColor *insertionPointColor;
 @property DuxTextStorage *storage;
-@property NSString *string;
 
 @property NSUInteger scrollPosition; // character offeset of the first visible line
 

@@ -12,6 +12,7 @@
 #import "DuxPreferences.h"
 #import "DuxProjectWindowController.h"
 #import "DuxLanguage.h"
+#import "DuxPlainTextLanguage.h"
 
 @implementation MyTextDocument
 
@@ -130,7 +131,8 @@ if ([DuxPreferences editorDarkMode]) {
 {
   [self.textView breakUndoCoalescing];
   
-  return [textContentStorage.string dataUsingEncoding:self.stringEncoding];
+  return textContentStorage.data;
+//  return [textContentStorage.string dataUsingEncoding:self.stringEncoding];
 }
 
 - (BOOL)writeToURL:(NSURL *)absoluteURL ofType:(NSString *)typeName error:(NSError **)outError
@@ -144,29 +146,32 @@ if ([DuxPreferences editorDarkMode]) {
 
 - (BOOL)readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError **)outError
 {
-  NSStringEncoding encoding;
-  NSMutableString *textContentToLoad = [NSMutableString mutableStringWithUnknownData:data usedEncoding:&encoding];
-  if (!textContentToLoad) {
-    *outError = [NSError errorWithDomain:NSCocoaErrorDomain code:NSFileReadUnknownError userInfo:nil];
-    return NO;
-  }
-  self.stringEncoding = encoding;
+//  NSStringEncoding encoding;
+//  NSMutableString *textContentToLoad = [NSMutableString mutableStringWithUnknownData:data usedEncoding:&encoding];
+//  if (!textContentToLoad) {
+//    *outError = [NSError errorWithDomain:NSCocoaErrorDomain code:NSFileReadUnknownError userInfo:nil];
+//    return NO;
+//  }
+//  self.stringEncoding = encoding;
+  self.stringEncoding = NSUTF8StringEncoding;
   
   // figure out what language to use
-  for (Class language in [DuxLanguage registeredLanguages]) {
-    if (![language isDefaultLanguageForURL:self.fileURL textContents:textContentToLoad])
-      continue;
-    
-    self.textView.storage.language = [language sharedInstance];
-    break;
-  }
+//  for (Class language in [DuxLanguage registeredLanguages]) {
+//    if (![language isDefaultLanguageForURL:self.fileURL textContents:textContentToLoad])
+//      continue;
+//    
+//    self.textView.storage.language = [language sharedInstance];
+//    break;
+//  }
+  self.textView.storage.language = [DuxPlainTextLanguage sharedInstance];
   
 //  self.textView.string = textContentToLoad;
-  [self.textView.storage setMutableString:textContentToLoad];
+  [self.textView.storage setData:data];
   //  [textContentStorage replaceCharactersInRange:NSMakeRange(0, textContentStorage.length) withAttributedString:[[NSAttributedString alloc] initWithString:textContentToLoad attributes:@{NSFontAttributeName:[DuxPreferences editorFont]}]];
   
   // set activeNewlineStyle to the first newline in the document
-  self.activeNewlineStyle = [textContentToLoad newlineStyleForFirstNewline];
+//  self.activeNewlineStyle = [textContentToLoad newlineStyleForFirstNewline];
+  self.activeNewlineStyle = DuxNewlineUnix;
   
   return YES;
 }
@@ -364,33 +369,33 @@ if ([DuxPreferences editorDarkMode]) {
   if ([[NSApp keyWindow].windowController document] != self)
     return;
   
-  NSMenuItem *menuItem = [[[[NSApplication sharedApplication].mainMenu itemWithTitle:@"Editor"].submenu itemWithTitle:@"Line Endings"].submenu itemAtIndex:0];
-  
-  menuItem.title = @"In use: Calculating...";
-  NSString *stringForNewlineCalculation = [textContentStorage.string copy];
-  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
-    DuxNewlineOptions newlineStyles = [stringForNewlineCalculation newlineStyles];
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-      if ([[NSApp keyWindow].windowController document] != self)
-        return;
-    
-      if (newlineStyles == 0) {
-        menuItem.title = @"In use: N/A";
-        return;
-      }
-      
-      NSMutableArray *styleNames = [NSMutableArray array];
-      if (newlineStyles & DuxNewlineUnix)
-        [styleNames addObject:@"Mac OS X / UNIX"];
-      if (newlineStyles & DuxNewlineWindows)
-        [styleNames addObject:@"Windows"];
-      if (newlineStyles & DuxNewlineClassicMac)
-        [styleNames addObject:@"Mac OS Classic"];
-      
-      menuItem.title = [NSString stringWithFormat:@"In use: %@", [styleNames componentsJoinedByString:@", "]];
-    });
-  });
+//  NSMenuItem *menuItem = [[[[NSApplication sharedApplication].mainMenu itemWithTitle:@"Editor"].submenu itemWithTitle:@"Line Endings"].submenu itemAtIndex:0];
+//  
+//  menuItem.title = @"In use: Calculating...";
+//  NSString *stringForNewlineCalculation = [textContentStorage.string copy];
+//  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+//    DuxNewlineOptions newlineStyles = [stringForNewlineCalculation newlineStyles];
+//    
+//    dispatch_async(dispatch_get_main_queue(), ^{
+//      if ([[NSApp keyWindow].windowController document] != self)
+//        return;
+//    
+//      if (newlineStyles == 0) {
+//        menuItem.title = @"In use: N/A";
+//        return;
+//      }
+//      
+//      NSMutableArray *styleNames = [NSMutableArray array];
+//      if (newlineStyles & DuxNewlineUnix)
+//        [styleNames addObject:@"Mac OS X / UNIX"];
+//      if (newlineStyles & DuxNewlineWindows)
+//        [styleNames addObject:@"Windows"];
+//      if (newlineStyles & DuxNewlineClassicMac)
+//        [styleNames addObject:@"Mac OS Classic"];
+//      
+//      menuItem.title = [NSString stringWithFormat:@"In use: %@", [styleNames componentsJoinedByString:@", "]];
+//    });
+//  });
 }
 
 - (void)updateEncodingMenuItems

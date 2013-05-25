@@ -12,7 +12,7 @@
 
 @interface DuxTextStorage : NSObject
 {
-  NSMutableString *contents;
+  NSData *contents;
   
   NSPointerArray *lines;
   NSUInteger unsafeLinesOffset;
@@ -23,7 +23,9 @@
   DuxLanguage *language;
 }
 
-@property NSString *string;
+- (NSString *)string;
+
+@property NSData *data;
 @property (readonly) NSUInteger length;
 
 @property DuxLanguage *language;
@@ -31,12 +33,14 @@
 
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string;
 
-- (void)setMutableString:(NSMutableString *)string; // unlike setting the string directly, this allows you to give the text storage a mutable string that it will use internally. you must not modify this string after providing it, except via the storage
+- (void)setData:(NSData *)data;
+
+- (CFAttributedStringRef)substringWithByteRange:(NSRange)range;
 
 - (DuxLine *)lineAtCharacterPosition:(NSUInteger)characterPosition;
 - (DuxLine *)lineBeforeLine:(DuxLine *)line;
 - (DuxLine *)lineAfterLine:(DuxLine *)line;
 
-- (BOOL)positionSplitsWindowsNewline:(NSUInteger)characterPosition; // if characterPosition is in between a \r\n pair, this returns YES. Text should never be inserted in between these two characters, but DuxTextStorage does not guard against that for you.
+- (BOOL)positionSplitsWindowsNewline:(NSUInteger)byteOffset; // check if the byte before this offset is \r and the byte after is \n
 
 @end

@@ -8,7 +8,7 @@
 
 #import <QuartzCore/QuartzCore.h>
 
-#define DUX_LINE_NUMBER_WIDTH 40
+#define DUX_LINE_NUMBER_WIDTH 80
 #define DUX_LINE_HEIGHT 17
 #define DUX_LINE_MAX_WRAPPED_LINES 10
 #define DUX_LINE_MAX_STRING_TO_DRAW_LENGTH 10000
@@ -17,19 +17,11 @@
 
 @interface DuxLine : CALayer
 {
-  NSMutableAttributedString *stringToDraw;
+  CFAttributedStringRef stringToDraw;
   CTTypesetterRef typesetter;
-//  CTFramesetterRef framesetter;
-  
-//  CGPathRef contentPath;
-//  CTFrameRef contentFrame;
-  
-  CFArrayRef lines;
-  CFIndex lineCount;
-  CGPoint lineOrigins[DUX_LINE_MAX_WRAPPED_LINES];
 }
 
-- (id)initWithStorage:(DuxTextStorage *)storage range:(NSRange)range lineNumber:(NSUInteger)lineNumber workingElementStack:(NSMutableArray *)elementStack;
+- (id)initWithString:(CFAttributedStringRef)string byteRange:(NSRange)range;
 
 @property (readonly, weak) DuxTextStorage *storage;
 @property (readonly) NSRange range;
