@@ -64,12 +64,12 @@ static __weak id keywordIndexString = nil;
   return keywordIndexString;
 }
 
-- (void)prepareToParseTextStorage:(DuxTextStorage *)textStorage inRange:(NSRange)range
-{
-  [super prepareToParseTextStorage:textStorage inRange:range];
-  
-  [self findKeywordsInString:textStorage.string inRange:range];
-}
+//- (void)prepareToParseTextStorage:(DuxTextStorage *)textStorage inRange:(NSRange)range
+//{
+//  [super prepareToParseTextStorage:textStorage inRange:range];
+//  
+//  [self findKeywordsInString:textStorage.string inRange:range];
+//}
 
 - (void)findKeywordsInString:(NSString *)string inRange:(NSRange)range
 {

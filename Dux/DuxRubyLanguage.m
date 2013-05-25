@@ -53,23 +53,23 @@ static NSIndexSet *keywordIndexSet = nil;
   return keywordIndexSet;
 }
 
-- (void)prepareToParseTextStorage:(DuxTextStorage *)textStorage inRange:(NSRange)range
-{
-  [super prepareToParseTextStorage:textStorage inRange:range];
-  
-  if (!keywordsExpression) {
-    NSArray *keywords = [[NSArray alloc] initWithObjects:@"BEGIN", @"END", @"__ENCODING__", @"__END__", @"__FILE__", @"__LINE__", @"alias", @"and", @"begin", @"break", @"case", @"class", @"def", @"defined", @"do", @"else", @"elsif", @"end", @"ensure", @"false", @"for", @"if", @"in", @"module", @"next", @"nil", @"not", @"or", @"redo", @"rescue", @"retry", @"return", @"self", @"super", @"then", @"true", @"undef", @"unless", @"until", @"when", @"while", @"yield", nil];
-    
-    keywordsExpression = [[NSRegularExpression alloc] initWithPattern:[[NSString alloc] initWithFormat:@"\\b(%@)\\b", [keywords componentsJoinedByString:@"|"]] options:NSRegularExpressionCaseInsensitive error:NULL];
-  }
-  
-  NSMutableIndexSet *keywordIndexesMutable = [[NSIndexSet indexSet] mutableCopy];
-  [keywordsExpression enumerateMatchesInString:textStorage.string options:0 range:range usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop){
-    [keywordIndexesMutable addIndexesInRange:match.range];
-  }];
-  
-  keywordIndexSet = [keywordIndexesMutable copy];
-}
+//- (void)prepareToParseTextStorage:(DuxTextStorage *)textStorage inRange:(NSRange)range
+//{
+//  [super prepareToParseTextStorage:textStorage inRange:range];
+//  
+//  if (!keywordsExpression) {
+//    NSArray *keywords = [[NSArray alloc] initWithObjects:@"BEGIN", @"END", @"__ENCODING__", @"__END__", @"__FILE__", @"__LINE__", @"alias", @"and", @"begin", @"break", @"case", @"class", @"def", @"defined", @"do", @"else", @"elsif", @"end", @"ensure", @"false", @"for", @"if", @"in", @"module", @"next", @"nil", @"not", @"or", @"redo", @"rescue", @"retry", @"return", @"self", @"super", @"then", @"true", @"undef", @"unless", @"until", @"when", @"while", @"yield", nil];
+//    
+//    keywordsExpression = [[NSRegularExpression alloc] initWithPattern:[[NSString alloc] initWithFormat:@"\\b(%@)\\b", [keywords componentsJoinedByString:@"|"]] options:NSRegularExpressionCaseInsensitive error:NULL];
+//  }
+//  
+//  NSMutableIndexSet *keywordIndexesMutable = [[NSIndexSet indexSet] mutableCopy];
+//  [keywordsExpression enumerateMatchesInString:textStorage.string options:0 range:range usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop){
+//    [keywordIndexesMutable addIndexesInRange:match.range];
+//  }];
+//  
+//  keywordIndexSet = [keywordIndexesMutable copy];
+//}
 
 + (BOOL)isDefaultLanguageForURL:(NSURL *)URL textContents:(NSString *)textContents
 {

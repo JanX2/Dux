@@ -1205,41 +1205,41 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)moveForward:(id)sender extendSelection:(BOOL)extend
 {
-  NSMutableArray *newRanges = [NSMutableArray arrayWithCapacity:self.selectedRanges.count];
-  
-  for (NSValue *rangeValue in self.selectedRanges) {
-    NSRange range = rangeValue.rangeValue;
-    
-    if (range.location + range.length == self.storage.string.length) {
-      [newRanges addObject:rangeValue];
-      continue;
-    }
-    
-    if (extend) {
-      if (range.length == 0) {
-        range.length++;
-        self.selectionAffinity = NSSelectionAffinityDownstream;
-      } else {
-        if (self.selectionAffinity == NSSelectionAffinityDownstream) {
-          range.length++;
-        } else {
-          range.location++;
-          range.length--;
-        }
-      }
-    } else {
-      if (range.length > 0) {
-        range.location = range.location + range.length;
-        range.length = 0;
-      } else {
-        range.location++;
-      }
-    }
-    
-    [newRanges addObject:[NSValue valueWithRange:range]];
-  }
-  
-  self.selectedRanges = newRanges.copy;
+//  NSMutableArray *newRanges = [NSMutableArray arrayWithCapacity:self.selectedRanges.count];
+//  
+//  for (NSValue *rangeValue in self.selectedRanges) {
+//    NSRange range = rangeValue.rangeValue;
+//    
+//    if (range.location + range.length == self.storage.string.length) {
+//      [newRanges addObject:rangeValue];
+//      continue;
+//    }
+//    
+//    if (extend) {
+//      if (range.length == 0) {
+//        range.length++;
+//        self.selectionAffinity = NSSelectionAffinityDownstream;
+//      } else {
+//        if (self.selectionAffinity == NSSelectionAffinityDownstream) {
+//          range.length++;
+//        } else {
+//          range.location++;
+//          range.length--;
+//        }
+//      }
+//    } else {
+//      if (range.length > 0) {
+//        range.location = range.location + range.length;
+//        range.length = 0;
+//      } else {
+//        range.location++;
+//      }
+//    }
+//    
+//    [newRanges addObject:[NSValue valueWithRange:range]];
+//  }
+//  
+//  self.selectedRanges = newRanges.copy;
 }
 
 - (void)moveUp:(id)sender
@@ -1467,19 +1467,19 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (NSUInteger)characterPositionForPoint:(CGPoint)point
 {
-  // first figure out which line we are inside
-  DuxLine *line = [self.storage lineAtCharacterPosition:self.scrollPosition];
-  
-  while (line) { // layout lines for a couple hundred extra pixels to improve animations
-    line = [self.storage lineAfterLine:line];
-
-    if (line.frame.origin.y < point.y)
-      break;
-  }
-  if (!line)
-    return self.storage.string.length; // reached the end of the file
-  
-  return [line characterOffsetForPoint:CGPointMake(point.x - line.frame.origin.x, point.y - line.frame.origin.y)];
+//  // first figure out which line we are inside
+//  DuxLine *line = [self.storage lineAtCharacterPosition:self.scrollPosition];
+//  
+//  while (line) { // layout lines for a couple hundred extra pixels to improve animations
+//    line = [self.storage lineAfterLine:line];
+//
+//    if (line.frame.origin.y < point.y)
+//      break;
+//  }
+//  if (!line)
+//    return self.storage.string.length; // reached the end of the file
+//  
+//  return [line characterOffsetForPoint:CGPointMake(point.x - line.frame.origin.x, point.y - line.frame.origin.y)];
   
   return 0;
 }

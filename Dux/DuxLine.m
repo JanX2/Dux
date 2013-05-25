@@ -287,7 +287,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"<DuxLine %lu,%lu>: \"%@\"", (unsigned long)self.range.location, (unsigned long)self.range.length, [self.storage.string substringWithRange:self.range]];
+  return [NSString stringWithFormat:@"<DuxLine %lu,%lu>: \"%@\"", (unsigned long)self.range.location, (unsigned long)self.range.length, CFAttributedStringGetString([self.storage substringWithByteRange:self.range])];
 }
 
 @end

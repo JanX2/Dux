@@ -23,8 +23,6 @@
   DuxLanguage *language;
 }
 
-- (NSString *)string;
-
 @property NSData *data;
 @property (readonly) NSUInteger length;
 
@@ -32,8 +30,6 @@
 @property (readonly) NSDictionary *textAttributes;
 
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string;
-
-- (void)setData:(NSData *)data;
 
 - (CFAttributedStringRef)substringWithByteRange:(NSRange)range;
 
