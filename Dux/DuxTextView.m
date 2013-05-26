@@ -1496,7 +1496,7 @@ static NSCharacterSet *newlineCharacterSet;
   
   NSMutableSet *lineLayers = [[NSMutableSet alloc] init];
   BOOL isFirst = YES;
-  while (yOffset > -200) { // layout lines for a couple hundred extra pixels to improve animations
+  while (yOffset > (-0.1 - DUX_LINE_HEIGHT)) {
     if (isFirst) {
       isFirst = NO;
     } else {
@@ -1830,12 +1830,14 @@ static NSCharacterSet *newlineCharacterSet;
         [self scrollBy:self.scrollDelta animated:YES];
       }
       
-      // after a moment (to let animations finish) manually update the layer incase we screwed anything up with scrolling optimisaitons (root of all evil and all that)
+      // after scrolling is done, update our layers. TODO: make this a fast operation and make it be called every time inside [self scrollBy:animated:]
       double delayInSeconds = 0.25;
       dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
       dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-        [self updateLayer];
+        if (!scrollInMomentumPhase)
+          [self updateLayer];
       });
+      scrollInMomentumPhase = NO;
       break;
     }
     default: {
@@ -1882,26 +1884,18 @@ static NSCharacterSet *newlineCharacterSet;
   
   [CATransaction commit];
   
-  // add/remove lines as needed
+  // if scrollDelta is more than one line, remove the invisible lines and adjust the scroll position to the first visible line
   while (self.scrollDelta > DUX_LINE_HEIGHT) {
     DuxLine *thisLine = [self.storage lineStartingAtByteLocation:self.scrollPosition];
     DuxLine *nextLine = [self.storage lineAfterLine:thisLine];
     if (!nextLine)
       break;
     
-    for (DuxLine *possibleLineToRemove in self.layer.sublayers) {
-      if (![possibleLineToRemove isKindOfClass:[DuxLine class]])
-        continue;
-      
-      if (possibleLineToRemove.range.location == thisLine.range.location) {
-        [possibleLineToRemove removeFromSuperlayer];
-        break;
-      }
-    }
-    
     self.scrollPosition = nextLine.range.location;
     self.scrollDelta -= DUX_LINE_HEIGHT;
   }
+  
+  // if scroll delta is less than zero, add new lines until it's > 0
   while (self.scrollDelta <= 0) {
     DuxLine *nextLine = [self.storage lineBeforeLine:[self.storage lineStartingAtByteLocation:self.scrollPosition]];
     if (!nextLine)
@@ -1909,9 +1903,6 @@ static NSCharacterSet *newlineCharacterSet;
     
     self.scrollPosition = nextLine.range.location;
     self.scrollDelta += DUX_LINE_HEIGHT;
-    
-    [nextLine setFrameWithTopLeftOrigin:CGPointMake(leftGutter, round(self.frame.size.height + self.scrollDelta)) width:self.frame.size.width - leftGutter - rightGutter];
-    [self.layer addSublayer:nextLine];
   }
 }
 
