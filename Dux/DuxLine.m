@@ -143,11 +143,14 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
 //    height = self.frame.size.height;
 //  }
   
+  CGRect newFrame = CGRectMake(point.x, point.y - DUX_LINE_HEIGHT, width, DUX_LINE_HEIGHT);
+  
+  if (CGRectEqualToRect(newFrame, self.frame))
+    return;
+  
   [self setNeedsDisplay];
   
-  CGFloat height = DUX_LINE_HEIGHT;
-  
-  [super setFrame:CGRectMake(point.x, point.y - height, width, height)];
+  [super setFrame:newFrame];
 }
 
 - (void)createStringToDraw
@@ -286,7 +289,12 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"<DuxLine %lu,%lu>: \"%@\"", (unsigned long)self.range.location, (unsigned long)self.range.length, stringToDraw];
+  NSString *string = nil;
+  if (stringToDraw) {
+    string = (NSString *)CFAttributedStringGetString(stringToDraw);
+  }
+  
+  return [NSString stringWithFormat:@"<DuxLine %lu,%lu>: \"%@\"", (unsigned long)self.range.location, (unsigned long)self.range.length, string];
 }
 
 @end

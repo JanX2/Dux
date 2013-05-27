@@ -13,14 +13,8 @@
 @interface DuxTextStorage : NSObject
 {
   NSData *contents;
-  
-  NSPointerArray *lines;
-  NSUInteger unsafeLinesOffset;
-  NSUInteger findLinesLineCount;
-  NSMutableArray *languageElementStack;
-  
   NSDictionary *textAttributes;
-  DuxLanguage *language;
+  NSCache *lineCache;
 }
 
 @property NSData *data;

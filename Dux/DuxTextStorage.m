@@ -29,8 +29,9 @@ static NSCharacterSet *newlineCharacters;
     return nil;
   
   contents = [[NSData alloc] init];
-  lines = [NSPointerArray strongObjectsPointerArray];
-  unsafeLinesOffset = 0;
+  
+  lineCache = [[NSCache alloc] init];
+  lineCache.countLimit = 1000;
   
   NSMutableParagraphStyle *paragraphStyle = [NSParagraphStyle defaultParagraphStyle].mutableCopy;
   paragraphStyle.tabStops = @[];
@@ -40,8 +41,6 @@ static NSCharacterSet *newlineCharacters;
   paragraphStyle.defaultTabInterval = 14;
   paragraphStyle.headIndent = 28;
   textAttributes = @{NSFontAttributeName: [NSFont fontWithName:@"Source Code Pro" size:13], NSParagraphStyleAttributeName:paragraphStyle.copy, NSForegroundColorAttributeName: (id)[[NSColor blackColor] CGColor]};
-  
-  language = [DuxPlainTextLanguage sharedInstance];
   
   return self;
 }
@@ -59,10 +58,7 @@ static NSCharacterSet *newlineCharacters;
 - (void)setData:(NSData *)data
 {
   contents = data;
-  
-  [lines setCount:0];
-  [lines compact];
-  unsafeLinesOffset = 0;
+  [lineCache removeAllObjects];
 }
 
 //- (void)setString:(NSString *)string
@@ -73,19 +69,6 @@ static NSCharacterSet *newlineCharacters;
 //  [lines compact];
 //  unsafeLinesOffset = 0;
 //}
-
-- (DuxLanguage *)language
-{
-  return language;
-}
-
-- (void)setLanguage:(DuxLanguage *)newLanguage
-{
-  if (language == newLanguage)
-    return;
-  
-  language = newLanguage;
-}
 
 - (NSDictionary *)textAttributes
 {
@@ -179,6 +162,41 @@ static NSCharacterSet *newlineCharacters;
 
 - (DuxLine *)lineStartingAtByteLocation:(NSUInteger)byteLocation
 {
+  NSNumber *lineCacheKey = [NSNumber numberWithUnsignedInteger:byteLocation];
+  DuxLine *cachedLine = [lineCache objectForKey:lineCacheKey];
+  if (cachedLine)
+    return cachedLine;
+  
+  // is there a newline at this byte offset? handle it specially
+  if (self.length >= byteLocation + 2) {
+    UInt8 possibleNewlineBytes[2];
+    [self.data getBytes:&possibleNewlineBytes range:NSMakeRange(byteLocation, 2)];
+    
+    if (possibleNewlineBytes[0] == '\n') {
+      DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
+      [lineCache setObject:line forKey:lineCacheKey];
+      return line;
+    } else if (possibleNewlineBytes[0] == '\r') {
+      if (possibleNewlineBytes[1] == '\n') {
+        DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 2)];
+        [lineCache setObject:line forKey:lineCacheKey];
+        return line;
+      }
+      DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
+      [lineCache setObject:line forKey:lineCacheKey];
+      return line;
+    }
+  } else if (self.length >= byteLocation + 1) {
+    UInt8 possibleNewlineBytes[1];
+    [self.data getBytes:&possibleNewlineBytes range:NSMakeRange(byteLocation, 1)];
+    
+    if (possibleNewlineBytes[0] == '\n' || possibleNewlineBytes[0] == '\r') {
+      DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
+      [lineCache setObject:line forKey:lineCacheKey];
+      return line;
+    }
+  }
+  
   // decode 1,000 bytes
   NSUInteger bytesLength = MIN(self.length - byteLocation, 1000);
   UInt8 bytes[bytesLength];
@@ -199,8 +217,32 @@ static NSCharacterSet *newlineCharacters;
   CFIndex lineBytesLength;
   CFStringGetBytes(CFAttributedStringGetString(lineString), CFRangeMake(0, lineLength), kCFStringEncodingUTF8, 0, YES, NULL, ULONG_MAX, &lineBytesLength); //TODO: support other encodings
   
+  // is there a newline where core text decided to wrap? if so, include it in the line
+  if (self.length >= byteLocation + lineBytesLength + 2) {
+    UInt8 possibleNewlineBytes[2];
+    [self.data getBytes:&possibleNewlineBytes range:NSMakeRange(byteLocation + lineBytesLength, 2)];
+    
+    if (possibleNewlineBytes[0] == '\n') {
+      lineBytesLength++;
+    } else if (possibleNewlineBytes[0] == '\r') {
+      lineBytesLength++;
+      if (possibleNewlineBytes[1] == '\n')
+        lineBytesLength++;
+    }
+  } else if (self.length >= byteLocation + lineBytesLength + 1) {
+    UInt8 possibleNewlineBytes[1];
+    [self.data getBytes:&possibleNewlineBytes range:NSMakeRange(byteLocation + lineBytesLength, 1)];
+    
+    if (possibleNewlineBytes[0] == '\n') {
+      lineBytesLength++;
+    } else if (possibleNewlineBytes[0] == '\r') {
+      lineBytesLength++;
+    }
+  }
+  
   // create the line
   DuxLine *line = [[DuxLine alloc] initWithString:lineString byteRange:NSMakeRange(byteLocation, lineBytesLength)];
+  [lineCache setObject:line forKey:lineCacheKey];
   
   return line;
 //  
@@ -256,11 +298,10 @@ static NSCharacterSet *newlineCharacters;
   if (previousLineEnd > 0) {
     [self.data getBytes:&byte range:NSMakeRange(previousLineEnd -1, 1)];
     if (byte[0] == '\r' || byte[0] == '\n') {
-      if ([self positionSplitsWindowsNewline:previousLineEnd]) {
-        return [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(previousLineEnd - 1, 0)];
-      } else {
-        return [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(previousLineEnd, 0)];
-      }
+      if ([self positionSplitsWindowsNewline:previousLineEnd])
+        previousLineEnd--;
+      
+      return [self lineStartingAtByteLocation:previousLineEnd];
     }
   }
   
@@ -302,7 +343,7 @@ static NSCharacterSet *newlineCharacters;
   CFStringGetBytes(CFAttributedStringGetString(lineString), CFRangeMake(0, lineLength), kCFStringEncodingUTF8, 0, YES, NULL, ULONG_MAX, &lineBytesLength); //TODO: support other encodings
   
   // create the line
-  return [[DuxLine alloc] initWithString:lineString byteRange:NSMakeRange(line.range.location - lineBytesLength - newlineBetweenLinesByteLength, lineBytesLength)];
+  return [self lineStartingAtByteLocation:line.range.location - lineBytesLength - newlineBetweenLinesByteLength];
 
 }
 
@@ -324,18 +365,17 @@ static NSCharacterSet *newlineCharacters;
     return [self lineStartingAtByteLocation:0];
   
   // figure out where the previous line should end (if there's a newline before the line, we need to find the offset before it)
-  NSUInteger lastLineEnd = self.length - 1;
+  NSUInteger lastLineEnd = self.length;
   
   // is the line before this one a completely empty line? need to handle 0 byte lines manually
   if (lastLineEnd > 0) {
     UInt8 byte[1];
     [self.data getBytes:&byte range:NSMakeRange(lastLineEnd -1, 1)];
     if (byte[0] == '\r' || byte[0] == '\n') {
-      if ([self positionSplitsWindowsNewline:lastLineEnd]) {
-        return [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(lastLineEnd - 1, 0)];
-      } else {
-        return [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(lastLineEnd, 0)];
-      }
+      if ([self positionSplitsWindowsNewline:lastLineEnd])
+        lastLineEnd--;
+      
+      return [self lineStartingAtByteLocation:lastLineEnd];
     }
   }
   
@@ -377,7 +417,8 @@ static NSCharacterSet *newlineCharacters;
   CFStringGetBytes(CFAttributedStringGetString(lineString), CFRangeMake(0, lineLength), kCFStringEncodingUTF8, 0, YES, NULL, ULONG_MAX, &lineBytesLength); //TODO: support other encodings
   
   // create the line
-  return [[DuxLine alloc] initWithString:lineString byteRange:NSMakeRange(self.length - lineBytesLength, lineBytesLength)];
+  NSLog(@"last line: %@", [self lineStartingAtByteLocation:self.length - lineBytesLength]);
+  return [self lineStartingAtByteLocation:self.length - lineBytesLength];
 }
 
 @end

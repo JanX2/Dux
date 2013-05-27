@@ -1842,6 +1842,10 @@ static NSCharacterSet *newlineCharacterSet;
   if (!line)
     return 0;
   
+  DuxLine *nextLine = [self.storage lineAfterLine:line];
+  if (nextLine)
+    return nextLine.range.location;
+  
   return line.range.location;
 }
 
@@ -1861,14 +1865,6 @@ static NSCharacterSet *newlineCharacterSet;
       if (self.scrollPosition == 0 && self.scrollDelta < 0) {
         [self scrollBy:self.scrollDelta animated:YES];
       }
-      
-      // after scrolling is done, update our layers. TODO: make this a fast operation and make it be called every time inside [self scrollBy:animated:]
-      double delayInSeconds = 0.25;
-      dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-      dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-        if (!scrollInMomentumPhase)
-          [self updateLayer];
-      });
       scrollInMomentumPhase = NO;
       break;
     }
@@ -1887,49 +1883,15 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)scrollBy:(CGFloat)delta animated:(BOOL)animated
 {
-  if (fabs(delta) < 0.1) {
-    return;
-  }
-  
-  
-  BOOL forceUpdate = NO;
-  
-  // min scroll
-  if (self.scrollPosition == 0 && (self.scrollDelta - delta < 0.1)) {
-    forceUpdate = YES;
-    delta = self.scrollDelta;
-  }
-  
-  // max scroll
-  NSUInteger max = [self maxScrollPosition];
-  if (self.scrollPosition == max && self.scrollDelta - delta > 0.9) {
-    delta = 0 - self.scrollDelta;
-  }
+  animated = NO; // currently buggy
   
   // not going anywhere?
   if (fabs(delta) < 0.1) {
-    if (forceUpdate)
-      [self updateLayer];
-    
     return;
   }
   
   // convert pixel offset into our own internal representation (which is based on byte offsets in the document data)
   self.scrollDelta -= delta;
-  
-  // move all the layers, without animation for trackpads, with animation for mouse wheels
-  [CATransaction begin];
-  if (!animated)
-    [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions];
-  
-  for (CALayer *layer in self.layer.sublayers) {
-    CGRect frame = layer.frame;
-    frame.origin.y -= delta;
-    
-    layer.frame = frame;
-  }
-  
-  [CATransaction commit];
   
   // if scrollDelta is more than one line, remove the invisible lines and adjust the scroll position to the first visible line
   while (self.scrollDelta > DUX_LINE_HEIGHT) {
@@ -1943,11 +1905,10 @@ static NSCharacterSet *newlineCharacterSet;
   }
   if (self.scrollPosition == 0 && self.scrollDelta < 0.1) {
     self.scrollDelta = 0;
-    [self updateLayer];
   }
   
   // if scroll delta is less than zero, add new lines until it's > 0
-  while (self.scrollDelta <= 0) {
+  while (self.scrollDelta < -0.9) {
     DuxLine *nextLine = [self.storage lineBeforeLine:[self.storage lineStartingAtByteLocation:self.scrollPosition]];
     if (!nextLine)
       break;
@@ -1956,16 +1917,19 @@ static NSCharacterSet *newlineCharacterSet;
     self.scrollDelta += DUX_LINE_HEIGHT;
   }
   
+  // enforce min/max
+  NSUInteger max = [self maxScrollPosition];
   if (self.scrollPosition > max) {
     self.scrollPosition = max;
-    forceUpdate = YES;
   }
   if (self.scrollPosition == max && self.scrollDelta > 0.9) {
     self.scrollDelta = 0;
-    forceUpdate = YES;
   }
-  if (forceUpdate)
-    [self updateLayer];
+  if (self.scrollPosition == 0 && self.scrollDelta < 0) {
+    self.scrollDelta = 0;
+  }
+
+  [self updateLayer];
 }
 
 - (BOOL)isOpaque
@@ -1976,23 +1940,11 @@ static NSCharacterSet *newlineCharacterSet;
 - (void)scrollPageUp:(id)sender
 {
   [self scrollBy:self.frame.size.height animated:YES];
-  
-  double delayInSeconds = 0.25;
-  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-    [self updateLayer];
-  });
 }
 
 - (void)scrollPageDown:(id)sender
 {
   [self scrollBy:0 - self.frame.size.height animated:YES];
-  
-  double delayInSeconds = 0.25;
-  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-    [self updateLayer];
-  });
 }
 
 - (void)scrollToBeginningOfDocument:(id)sender
