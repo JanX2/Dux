@@ -318,4 +318,66 @@ static NSCharacterSet *newlineCharacters;
   return [self lineStartingAtByteLocation:newPosition];
 }
 
+- (DuxLine *)lastLine
+{
+  if (self.length == 0)
+    return [self lineStartingAtByteLocation:0];
+  
+  // figure out where the previous line should end (if there's a newline before the line, we need to find the offset before it)
+  NSUInteger lastLineEnd = self.length - 1;
+  
+  // is the line before this one a completely empty line? need to handle 0 byte lines manually
+  if (lastLineEnd > 0) {
+    UInt8 byte[1];
+    [self.data getBytes:&byte range:NSMakeRange(lastLineEnd -1, 1)];
+    if (byte[0] == '\r' || byte[0] == '\n') {
+      if ([self positionSplitsWindowsNewline:lastLineEnd]) {
+        return [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(lastLineEnd - 1, 0)];
+      } else {
+        return [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(lastLineEnd, 0)];
+      }
+    }
+  }
+  
+  // decode 1,000 bytes before the line
+  NSUInteger byteLocation = 0;
+  if (lastLineEnd >= 1000)
+    byteLocation = lastLineEnd - 1000;
+  
+  NSUInteger bytesLength = MIN(lastLineEnd, 1000);
+  UInt8 bytes[bytesLength];
+  [self.data getBytes:&bytes range:NSMakeRange(byteLocation, bytesLength)];
+  CFStringRef decodedData = CFStringCreateWithBytes(NULL, bytes, bytesLength, kCFStringEncodingUTF8, (byteLocation == 0)); // TODO: support other encodings
+  
+  // search backwards until we find a newline that wraps at the line's start
+  CFAttributedStringRef attributedString = CFAttributedStringCreate(NULL, decodedData, (__bridge CFDictionaryRef)(self.textAttributes));
+  CTTypesetterRef typesetter = CTTypesetterCreateWithAttributedString(attributedString);
+  CFIndex lineStartCharIndex = CFAttributedStringGetLength(attributedString) - 1;
+  while (lineStartCharIndex > 0) {
+    CFIndex lineLength = CTTypesetterSuggestLineBreak(typesetter, lineStartCharIndex, 1000);
+    
+    if ((lineStartCharIndex + lineLength) < CFAttributedStringGetLength(attributedString)) {
+      if (lineStartCharIndex > 0) {
+        UniChar firstByte = CFStringGetCharacterAtIndex(CFAttributedStringGetString(attributedString), lineStartCharIndex);
+        if (firstByte == '\r' || firstByte == '\n')
+          lineStartCharIndex++;
+      }
+      break;
+    }
+    
+    lineStartCharIndex--;
+  }
+  
+  // create an attributed string for the line
+  CFIndex lineLength = CFAttributedStringGetLength(attributedString) - lineStartCharIndex;
+  CFAttributedStringRef lineString = CFAttributedStringCreateWithSubstring(NULL, attributedString, CFRangeMake(lineStartCharIndex, lineLength));
+  
+  // count how many bytes the attributed string is
+  CFIndex lineBytesLength;
+  CFStringGetBytes(CFAttributedStringGetString(lineString), CFRangeMake(0, lineLength), kCFStringEncodingUTF8, 0, YES, NULL, ULONG_MAX, &lineBytesLength); //TODO: support other encodings
+  
+  // create the line
+  return [[DuxLine alloc] initWithString:lineString byteRange:NSMakeRange(self.length - lineBytesLength, lineBytesLength)];
+}
+
 @end

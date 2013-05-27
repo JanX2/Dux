@@ -36,6 +36,7 @@
 - (DuxLine *)lineStartingAtByteLocation:(NSUInteger)byteLocation;
 - (DuxLine *)lineBeforeLine:(DuxLine *)line;
 - (DuxLine *)lineAfterLine:(DuxLine *)line;
+- (DuxLine *)lastLine;
 
 - (BOOL)positionSplitsWindowsNewline:(NSUInteger)byteOffset; // check if the byte before this offset is \r and the byte after is \n
 

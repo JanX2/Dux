@@ -969,6 +969,18 @@ static NSCharacterSet *newlineCharacterSet;
     case NSDownArrowFunctionKey:
       [self moveDown:self];
       return;
+    case NSHomeFunctionKey:
+      [self scrollToBeginningOfDocument:self];
+      return;
+    case NSEndFunctionKey:
+      [self scrollToEndOfDocument:self];
+      return;
+    case NSPageUpFunctionKey:
+      [self scrollPageUp:self];
+      return;
+    case NSPageDownFunctionKey:
+      [self scrollPageDown:self];
+      return;
     case NSDeleteCharacter: // "delete" on mac keyboards, but "backspace" on others
       if (([theEvent modifierFlags] & NSControlKeyMask)) {
         [self deleteSubwordBackward:self];
@@ -1489,6 +1501,7 @@ static NSCharacterSet *newlineCharacterSet;
   [CATransaction begin];
   [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disable all animations. for now we assume only the line positions will change (don't want to animate that). any line height changes, we will animate
   
+  // find all the lines that should be visible TODO: this needs to use the existing set of line layers as a starting point, and only ask the storage for lines that we don't already have
   CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
   CGFloat yOffset = round(self.frame.size.height + self.scrollDelta);
   
@@ -1813,6 +1826,25 @@ static NSCharacterSet *newlineCharacterSet;
 //  return (axis == NSEventGestureAxisVertical);
 //}
 
+- (NSUInteger)maxScrollPosition
+{
+  CGFloat linesHeight = 0;
+  DuxLine *line = self.storage.lastLine;
+  while (linesHeight < (self.frame.size.height - DUX_LINE_HEIGHT)) {
+    DuxLine *nextLine = [self.storage lineBeforeLine:line];
+    if (!nextLine)
+      break;
+    
+    linesHeight += DUX_LINE_HEIGHT;
+    line = nextLine;
+  }
+  
+  if (!line)
+    return 0;
+  
+  return line.range.location;
+}
+
 - (void)scrollWheel:(NSEvent *)event
 {
   NSEventPhase phase = event.phase;
@@ -1855,20 +1887,35 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)scrollBy:(CGFloat)delta animated:(BOOL)animated
 {
-  if (fabs(delta) < 0.1)
+  if (fabs(delta) < 0.1) {
     return;
+  }
   
-  // did we overshoot the scroll position?
-  if (self.scrollPosition == 0 && self.scrollDelta - delta < 0) {
-    CGFloat overshootAmount = fabs(self.scrollDelta - delta);
-    delta -= (delta * (overshootAmount / 150));
+  
+  BOOL forceUpdate = NO;
+  
+  // min scroll
+  if (self.scrollPosition == 0 && (self.scrollDelta - delta < 0.1)) {
+    forceUpdate = YES;
+    delta = self.scrollDelta;
+  }
+  
+  // max scroll
+  NSUInteger max = [self maxScrollPosition];
+  if (self.scrollPosition == max && self.scrollDelta - delta > 0.9) {
+    delta = 0 - self.scrollDelta;
+  }
+  
+  // not going anywhere?
+  if (fabs(delta) < 0.1) {
+    if (forceUpdate)
+      [self updateLayer];
+    
+    return;
   }
   
   // convert pixel offset into our own internal representation (which is based on byte offsets in the document data)
   self.scrollDelta -= delta;
-  
-//  [self updateLayer];
-//  return;
   
   // move all the layers, without animation for trackpads, with animation for mouse wheels
   [CATransaction begin];
@@ -1894,6 +1941,10 @@ static NSCharacterSet *newlineCharacterSet;
     self.scrollPosition = nextLine.range.location;
     self.scrollDelta -= DUX_LINE_HEIGHT;
   }
+  if (self.scrollPosition == 0 && self.scrollDelta < 0.1) {
+    self.scrollDelta = 0;
+    [self updateLayer];
+  }
   
   // if scroll delta is less than zero, add new lines until it's > 0
   while (self.scrollDelta <= 0) {
@@ -1904,11 +1955,59 @@ static NSCharacterSet *newlineCharacterSet;
     self.scrollPosition = nextLine.range.location;
     self.scrollDelta += DUX_LINE_HEIGHT;
   }
+  
+  if (self.scrollPosition > max) {
+    self.scrollPosition = max;
+    forceUpdate = YES;
+  }
+  if (self.scrollPosition == max && self.scrollDelta > 0.9) {
+    self.scrollDelta = 0;
+    forceUpdate = YES;
+  }
+  if (forceUpdate)
+    [self updateLayer];
 }
 
 - (BOOL)isOpaque
 {
   return YES;
 }
+
+- (void)scrollPageUp:(id)sender
+{
+  [self scrollBy:self.frame.size.height animated:YES];
+  
+  double delayInSeconds = 0.25;
+  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+    [self updateLayer];
+  });
+}
+
+- (void)scrollPageDown:(id)sender
+{
+  [self scrollBy:0 - self.frame.size.height animated:YES];
+  
+  double delayInSeconds = 0.25;
+  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+    [self updateLayer];
+  });
+}
+
+- (void)scrollToBeginningOfDocument:(id)sender
+{
+  self.scrollPosition = 0;
+  self.scrollDelta = 0;
+  [self updateLayer];
+}
+
+- (void)scrollToEndOfDocument:(id)sender
+{
+  self.scrollPosition = self.maxScrollPosition;
+  self.scrollDelta = 0;
+  [self updateLayer];
+}
+
 
 @end
