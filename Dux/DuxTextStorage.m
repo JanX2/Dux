@@ -197,10 +197,24 @@ static NSCharacterSet *newlineCharacters;
     }
   }
   
-  // decode 1,000 bytes
+  // fetch 1,000 bytes
   NSUInteger bytesLength = MIN(self.length - byteLocation, 1000);
   UInt8 bytes[bytesLength];
   [self.data getBytes:&bytes range:NSMakeRange(byteLocation, bytesLength)];
+  
+  // check if the end of the bytes is inside a utf-8 sequence
+  if (bytesLength > 0) {
+    UInt8 lastByte = bytes[bytesLength - 1];
+    if ((lastByte & 0x80) != 0) { // is last byte a non-ASCII character?
+      while (((lastByte & 0xc0) == 0x80)) { // walk backwards until we have reached the first char in the utf-8 sequence
+        bytesLength--;
+        lastByte = bytes[bytesLength-1];
+      }
+      bytesLength--; // now go back 1 more byte (to skip the first char in utf-8 sequence)
+    }
+  }
+  
+  
   CFStringRef decodedData = CFStringCreateWithBytes(NULL, bytes, bytesLength, kCFStringEncodingUTF8, (byteLocation == 0)); // TODO: support other encodings
   
   // search for a newline or wrapped line
