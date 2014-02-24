@@ -81,6 +81,7 @@ static NSCharacterSet *newlineCharacterSet;
   self.selections = @[[DuxTextViewSelection selectionWithRange:NSMakeRange(0, 0) inTextView:self]];
   
   self.wantsLayer = YES;
+  self.layerUsesCoreImageFilters = YES;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
   self.layer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
   [self.layer setNeedsDisplay];
