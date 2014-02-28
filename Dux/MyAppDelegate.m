@@ -17,6 +17,7 @@
 #import "DuxRunBundleQuicklyWindowController.h"
 #import "DuxAcknowledgementsController.h"
 
+
 @interface MyAppDelegate ()
 
 @end
@@ -25,7 +26,10 @@
 
 + (void)initialize
 {
-  [DuxPreferences registerDefaults];
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    [DuxPreferences registerDefaults];
+  });
 }
 
 - (id)init

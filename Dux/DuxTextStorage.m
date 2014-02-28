@@ -30,9 +30,6 @@ static NSCharacterSet *newlineCharacters;
   
   contents = [[NSData alloc] init];
   
-  lineCache = [[NSCache alloc] init];
-  lineCache.countLimit = 1000;
-  
   NSMutableParagraphStyle *paragraphStyle = [NSParagraphStyle defaultParagraphStyle].mutableCopy;
   paragraphStyle.tabStops = @[];
   paragraphStyle.alignment = NSLeftTextAlignment;
@@ -40,7 +37,10 @@ static NSCharacterSet *newlineCharacters;
   paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
   paragraphStyle.defaultTabInterval = 14;
   paragraphStyle.headIndent = 28;
-  textAttributes = @{NSFontAttributeName: [NSFont fontWithName:@"Source Code Pro" size:13], NSParagraphStyleAttributeName:paragraphStyle.copy, NSForegroundColorAttributeName: (id)[[NSColor blackColor] CGColor]};
+  NSFont *font = [NSFont fontWithName:@"Source Code Pro" size:13];
+  if (!font)
+    font = [NSFont userFixedPitchFontOfSize:13];
+  textAttributes = @{NSFontAttributeName: font, NSParagraphStyleAttributeName:paragraphStyle.copy, NSForegroundColorAttributeName: (id)[[NSColor blackColor] CGColor]};
   
   return self;
 }
@@ -58,7 +58,6 @@ static NSCharacterSet *newlineCharacters;
 - (void)setData:(NSData *)data
 {
   contents = data;
-  [lineCache removeAllObjects];
 }
 
 //- (void)setString:(NSString *)string
@@ -162,10 +161,9 @@ static NSCharacterSet *newlineCharacters;
 
 - (DuxLine *)lineStartingAtByteLocation:(NSUInteger)byteLocation
 {
-  NSNumber *lineCacheKey = [NSNumber numberWithUnsignedInteger:byteLocation];
-  DuxLine *cachedLine = [lineCache objectForKey:lineCacheKey];
-  if (cachedLine)
-    return cachedLine;
+  // end of the data?
+  if (byteLocation == self.length)
+    return nil;
   
   // is there a newline at this byte offset? handle it specially
   if (self.length >= byteLocation + 2) {
@@ -174,16 +172,13 @@ static NSCharacterSet *newlineCharacters;
     
     if (possibleNewlineBytes[0] == '\n') {
       DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
-      [lineCache setObject:line forKey:lineCacheKey];
       return line;
     } else if (possibleNewlineBytes[0] == '\r') {
       if (possibleNewlineBytes[1] == '\n') {
         DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 2)];
-        [lineCache setObject:line forKey:lineCacheKey];
         return line;
       }
       DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
-      [lineCache setObject:line forKey:lineCacheKey];
       return line;
     }
   } else if (self.length >= byteLocation + 1) {
@@ -192,7 +187,6 @@ static NSCharacterSet *newlineCharacters;
     
     if (possibleNewlineBytes[0] == '\n' || possibleNewlineBytes[0] == '\r') {
       DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
-      [lineCache setObject:line forKey:lineCacheKey];
       return line;
     }
   }
@@ -215,78 +209,43 @@ static NSCharacterSet *newlineCharacters;
   }
   
   
-  CFStringRef decodedData = CFStringCreateWithBytes(NULL, bytes, bytesLength, kCFStringEncodingUTF8, (byteLocation == 0)); // TODO: support other encodings
   
-  // search for a newline or wrapped line
-  CFAttributedStringRef attributedString = CFAttributedStringCreate(NULL, decodedData, (__bridge CFDictionaryRef)(self.textAttributes));
-  CTTypesetterRef typesetter = CTTypesetterCreateWithAttributedString(attributedString);
-  CFIndex lineLength = CTTypesetterSuggestLineBreak(typesetter, 0, 1000);
+  // search for a newline
+  CFIndex lineBytesLength = 0;
+  CFIndex byteOffset;
+  for (byteOffset = 0; byteOffset < bytesLength; byteOffset++) {
+    UInt8 byte = bytes[byteOffset];
+    if (byte == '\n') {
+      lineBytesLength = byteOffset + 1;
+      break;
+    } else if (byte == '\r') {
+      lineBytesLength = byteOffset + 1;
+      if (lineBytesLength < bytesLength && bytes[lineBytesLength] == '\n')
+        lineBytesLength++;
+      break;
+    }
+  }
+  // hit the end of the data?
+  if (lineBytesLength == 0 && (byteLocation + byteOffset == self.length)) {
+    lineBytesLength = bytesLength;
+  }
   
-  // create an attributed string for the line
-  CFAttributedStringRef lineString = CFAttributedStringCreateWithSubstring(NULL, attributedString, CFRangeMake(0, lineLength));
+  // TODO: we should decode another 1,000 bytes here and keep searching. We need to implement soft wrapping before doing this though.
+  if (lineBytesLength == 0) {
+    NSLog(@"Not yet implemented. Can't handle lines longer than 1,000 bytes");
+    lineBytesLength = bytesLength - 1;
+  }
+  
+  // decode the data
+  CFStringRef decodedData = CFStringCreateWithBytes(NULL, bytes, lineBytesLength, kCFStringEncodingUTF8, (byteLocation == 0)); // TODO: support other encodings
+  CFAttributedStringRef lineString = CFAttributedStringCreate(NULL, decodedData, (__bridge CFDictionaryRef)(self.textAttributes));
   
   // TODO: syntax highlighting might go here
   
-  // count how many bytes the attributed string is
-  CFIndex lineBytesLength;
-  CFStringGetBytes(CFAttributedStringGetString(lineString), CFRangeMake(0, lineLength), kCFStringEncodingUTF8, 0, YES, NULL, ULONG_MAX, &lineBytesLength); //TODO: support other encodings
-  
-  // is there a newline where core text decided to wrap? if so, include it in the line
-  if (self.length >= byteLocation + lineBytesLength + 2) {
-    UInt8 possibleNewlineBytes[2];
-    [self.data getBytes:&possibleNewlineBytes range:NSMakeRange(byteLocation + lineBytesLength, 2)];
-    
-    if (possibleNewlineBytes[0] == '\n') {
-      lineBytesLength++;
-    } else if (possibleNewlineBytes[0] == '\r') {
-      lineBytesLength++;
-      if (possibleNewlineBytes[1] == '\n')
-        lineBytesLength++;
-    }
-  } else if (self.length >= byteLocation + lineBytesLength + 1) {
-    UInt8 possibleNewlineBytes[1];
-    [self.data getBytes:&possibleNewlineBytes range:NSMakeRange(byteLocation + lineBytesLength, 1)];
-    
-    if (possibleNewlineBytes[0] == '\n') {
-      lineBytesLength++;
-    } else if (possibleNewlineBytes[0] == '\r') {
-      lineBytesLength++;
-    }
-  }
-  
   // create the line
   DuxLine *line = [[DuxLine alloc] initWithString:lineString byteRange:NSMakeRange(byteLocation, lineBytesLength)];
-  [lineCache setObject:line forKey:lineCacheKey];
   
   return line;
-//  
-//  
-//  
-//  
-//  
-//  if (characterPosition > self.string.length)
-//    return nil;
-//  
-//  if (unsafeLinesOffset <= characterPosition || lines.count <= characterPosition) {
-//    [self findLinesUpToPosition:characterPosition];
-//  }
-//  
-//  if (characterPosition == 0)
-//    return [lines pointerAtIndex:0];
-//  
-//  // are we in the middle of a windows newline?
-//  if ([self positionSplitsWindowsNewline:characterPosition]) {
-//    characterPosition++;
-//  }
-//  
-//  NSUInteger lineStart;
-//  NSRange lineStartRange = [self.string rangeOfCharacterFromSet:newlineCharacters options:NSLiteralSearch | NSBackwardsSearch range:NSMakeRange(0, characterPosition)];
-//  if (lineStartRange.location == NSNotFound || lineStartRange.length == 0)
-//    lineStart = 0;
-//  else
-//    lineStart = lineStartRange.location + lineStartRange.length;
-//  
-//  return [lines pointerAtIndex:lineStart];
 }
 
 - (DuxLine *)lineBeforeLine:(DuxLine *)line
@@ -294,71 +253,64 @@ static NSCharacterSet *newlineCharacters;
   if (!line || line.range.location == 0)
     return nil;
   
-  // figure out where the previous line should end (if there's a newline before the line, we need to find the offset before it)
-  NSUInteger previousLineEnd = line.range.location;
-  UInt8 byte[1];
-  CFIndex newlineBetweenLinesByteLength = 0;
-  [self.data getBytes:&byte range:NSMakeRange(previousLineEnd -1, 1)];
-  if (byte[0] == '\r' || byte[0] == '\n') {
-    previousLineEnd--;
-    newlineBetweenLinesByteLength++;
-    if ([self positionSplitsWindowsNewline:previousLineEnd]) {
-      previousLineEnd--;
-      newlineBetweenLinesByteLength++;
-    }
-  }
-  
-  // is the line before this one a completely empty line? need to handle 0 byte lines manually
-  if (previousLineEnd > 0) {
-    [self.data getBytes:&byte range:NSMakeRange(previousLineEnd -1, 1)];
-    if (byte[0] == '\r' || byte[0] == '\n') {
-      if ([self positionSplitsWindowsNewline:previousLineEnd])
-        previousLineEnd--;
-      
-      return [self lineStartingAtByteLocation:previousLineEnd];
-    }
-  }
-  
+  return [self lineEndingAtByteOffset:line.range.location];
+}
+
+- (DuxLine *)lineEndingAtByteOffset:(NSUInteger)lineEnd
+{
   // decode 1,000 bytes before the line
   NSUInteger byteLocation = 0;
-  if (previousLineEnd >= 1000)
-    byteLocation = previousLineEnd - 1000;
+  if (lineEnd >= 1000)
+    byteLocation = lineEnd - 1000;
   
-  NSUInteger bytesLength = MIN(previousLineEnd, 1000);
+  NSUInteger bytesLength = MIN(lineEnd, 1000);
   UInt8 bytes[bytesLength];
   [self.data getBytes:&bytes range:NSMakeRange(byteLocation, bytesLength)];
-  CFStringRef decodedData = CFStringCreateWithBytes(NULL, bytes, bytesLength, kCFStringEncodingUTF8, (byteLocation == 0)); // TODO: support other encodings
   
-  // search backwards until we find a newline that wraps at the line's start
-  CFAttributedStringRef attributedString = CFAttributedStringCreate(NULL, decodedData, (__bridge CFDictionaryRef)(self.textAttributes));
-  CTTypesetterRef typesetter = CTTypesetterCreateWithAttributedString(attributedString);
-  CFIndex lineStartCharIndex = CFAttributedStringGetLength(attributedString) - 1;
-  while (lineStartCharIndex > 0) {
-    CFIndex lineLength = CTTypesetterSuggestLineBreak(typesetter, lineStartCharIndex, 1000);
-    
-    if ((lineStartCharIndex + lineLength) < CFAttributedStringGetLength(attributedString)) {
-      if (lineStartCharIndex > 0) {
-        UniChar firstByte = CFStringGetCharacterAtIndex(CFAttributedStringGetString(attributedString), lineStartCharIndex);
-        if (firstByte == '\r' || firstByte == '\n')
-          lineStartCharIndex++;
+  // search for a newline
+  CFIndex lineBytesLength = 0;
+  CFIndex byteOffset;
+  for (byteOffset = bytesLength - 1; byteOffset >= 0; byteOffset--) {
+    UInt8 byte = bytes[byteOffset];
+    if (byte == '\n') {
+      lineBytesLength = (bytesLength - byteOffset) - 1;
+      if (lineBytesLength == 0) { // this is the newline at the end of the previous line
+        if (byteOffset > 1 && bytes[byteOffset - 1] == '\r') {
+          byteOffset--;
+        }
+        
+        continue;
+      }
+      
+      break;
+    } else if (byte == '\r') {
+      lineBytesLength = bytesLength - byteOffset;
+      if (lineBytesLength == 0) { // this is the newline at the end of the previous line
+        continue;
       }
       break;
     }
-    
-    lineStartCharIndex--;
+  }
+  // got to the beginning of our data?
+  if (lineBytesLength == 0 && byteLocation == 0) {
+    lineBytesLength = lineEnd;
+  }
+  // did we not find any newlines at all?
+  if (lineBytesLength == 0) {
+    NSLog(@"Not yet implemented. Can't handle lines longer than 1,000 bytes");
+    lineBytesLength = bytesLength - 1;
   }
   
-  // create an attributed string for the line
-  CFIndex lineLength = CFAttributedStringGetLength(attributedString) - lineStartCharIndex;
-  CFAttributedStringRef lineString = CFAttributedStringCreateWithSubstring(NULL, attributedString, CFRangeMake(lineStartCharIndex, lineLength));
+  // decode the data
+  UInt8 lineBytes[lineBytesLength];
+  memcpy(lineBytes, bytes + (bytesLength - lineBytesLength), lineBytesLength);
+  CFStringRef decodedData = CFStringCreateWithBytes(NULL, lineBytes, lineBytesLength, kCFStringEncodingUTF8, (byteLocation == 0)); // TODO: support other encodings
+  CFAttributedStringRef lineString = CFAttributedStringCreate(NULL, decodedData, (__bridge CFDictionaryRef)(self.textAttributes));
   
-  // count how many bytes the attributed string is
-  CFIndex lineBytesLength;
-  CFStringGetBytes(CFAttributedStringGetString(lineString), CFRangeMake(0, lineLength), kCFStringEncodingUTF8, 0, YES, NULL, ULONG_MAX, &lineBytesLength); //TODO: support other encodings
+  // TODO: syntax highlighting might go here
   
   // create the line
-  return [self lineStartingAtByteLocation:line.range.location - lineBytesLength - newlineBetweenLinesByteLength];
-
+  return [[DuxLine alloc] initWithString:lineString byteRange:NSMakeRange(lineEnd - lineBytesLength, lineBytesLength)];
 }
 
 - (DuxLine *)lineAfterLine:(DuxLine *)line
@@ -376,63 +328,9 @@ static NSCharacterSet *newlineCharacters;
 - (DuxLine *)lastLine
 {
   if (self.length == 0)
-    return [self lineStartingAtByteLocation:0];
+    return nil;
   
-  // figure out where the previous line should end (if there's a newline before the line, we need to find the offset before it)
-  NSUInteger lastLineEnd = self.length;
-  
-  // is the line before this one a completely empty line? need to handle 0 byte lines manually
-  if (lastLineEnd > 0) {
-    UInt8 byte[1];
-    [self.data getBytes:&byte range:NSMakeRange(lastLineEnd -1, 1)];
-    if (byte[0] == '\r' || byte[0] == '\n') {
-      if ([self positionSplitsWindowsNewline:lastLineEnd])
-        lastLineEnd--;
-      
-      return [self lineStartingAtByteLocation:lastLineEnd];
-    }
-  }
-  
-  // decode 1,000 bytes before the line
-  NSUInteger byteLocation = 0;
-  if (lastLineEnd >= 1000)
-    byteLocation = lastLineEnd - 1000;
-  
-  NSUInteger bytesLength = MIN(lastLineEnd, 1000);
-  UInt8 bytes[bytesLength];
-  [self.data getBytes:&bytes range:NSMakeRange(byteLocation, bytesLength)];
-  CFStringRef decodedData = CFStringCreateWithBytes(NULL, bytes, bytesLength, kCFStringEncodingUTF8, (byteLocation == 0)); // TODO: support other encodings
-  
-  // search backwards until we find a newline that wraps at the line's start
-  CFAttributedStringRef attributedString = CFAttributedStringCreate(NULL, decodedData, (__bridge CFDictionaryRef)(self.textAttributes));
-  CTTypesetterRef typesetter = CTTypesetterCreateWithAttributedString(attributedString);
-  CFIndex lineStartCharIndex = CFAttributedStringGetLength(attributedString) - 1;
-  while (lineStartCharIndex > 0) {
-    CFIndex lineLength = CTTypesetterSuggestLineBreak(typesetter, lineStartCharIndex, 1000);
-    
-    if ((lineStartCharIndex + lineLength) < CFAttributedStringGetLength(attributedString)) {
-      if (lineStartCharIndex > 0) {
-        UniChar firstByte = CFStringGetCharacterAtIndex(CFAttributedStringGetString(attributedString), lineStartCharIndex);
-        if (firstByte == '\r' || firstByte == '\n')
-          lineStartCharIndex++;
-      }
-      break;
-    }
-    
-    lineStartCharIndex--;
-  }
-  
-  // create an attributed string for the line
-  CFIndex lineLength = CFAttributedStringGetLength(attributedString) - lineStartCharIndex;
-  CFAttributedStringRef lineString = CFAttributedStringCreateWithSubstring(NULL, attributedString, CFRangeMake(lineStartCharIndex, lineLength));
-  
-  // count how many bytes the attributed string is
-  CFIndex lineBytesLength;
-  CFStringGetBytes(CFAttributedStringGetString(lineString), CFRangeMake(0, lineLength), kCFStringEncodingUTF8, 0, YES, NULL, ULONG_MAX, &lineBytesLength); //TODO: support other encodings
-  
-  // create the line
-  NSLog(@"last line: %@", [self lineStartingAtByteLocation:self.length - lineBytesLength]);
-  return [self lineStartingAtByteLocation:self.length - lineBytesLength];
+  return [self lineEndingAtByteOffset:self.length];
 }
 
 @end

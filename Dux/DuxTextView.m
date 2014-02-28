@@ -36,11 +36,14 @@ static CAKeyframeAnimation *insertionPointBlinkAnimation;
 @implementation DuxTextView
 
 static NSCharacterSet *newlineCharacterSet;
+static CGFloat mainScreenBackingScaleFactor;
 
 + (void)initialize
 {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
+    mainScreenBackingScaleFactor = [NSScreen mainScreen].backingScaleFactor;
+    
     newlineCharacterSet = [NSCharacterSet newlineCharacterSet];
     
     insertionPointBlinkAnimation = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
@@ -78,12 +81,12 @@ static NSCharacterSet *newlineCharacterSet;
   self.scrollPosition = 0;
   self.selectionLayers = @[];
   self.selectionAffinity = NSSelectionAffinityDownstream;
-  self.selections = @[[DuxTextViewSelection selectionWithRange:NSMakeRange(0, 0) inTextView:self]];
+//  self.selections = @[[DuxTextViewSelection selectionWithRange:NSMakeRange(0, 0) inTextView:self]];
   
   self.wantsLayer = YES;
   self.layerUsesCoreImageFilters = YES;
   self.layer.backgroundColor = CGColorCreateGenericGray(1, 1);
-  self.layer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
+  self.layer.contentsScale = mainScreenBackingScaleFactor;
   [self.layer setNeedsDisplay];
     
   self.showLineNumbers = [DuxPreferences showLineNumbers];
@@ -131,12 +134,13 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (NSArray *)selectedRanges
 {
-  NSMutableArray *ranges = [NSMutableArray arrayWithCapacity:self.selections.count];
-  for (DuxTextViewSelection *selection in self.selections) {
-    [ranges addObject:[NSValue valueWithRange:selection.range]];
-  }
-  
-  return ranges.copy;
+  return @[];
+//  NSMutableArray *ranges = [NSMutableArray arrayWithCapacity:self.selections.count];
+//  for (DuxTextViewSelection *selection in self.selections) {
+//    [ranges addObject:[NSValue valueWithRange:selection.range]];
+//  }
+//  
+//  return ranges.copy;
 }
 
 - (void)insertNewline:(id)sender
@@ -1506,13 +1510,12 @@ static NSCharacterSet *newlineCharacterSet;
   CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
   CGFloat yOffset = round(self.frame.size.height + self.scrollDelta);
   
-  DuxLine *line = [self.storage lineStartingAtByteLocation:self.scrollPosition];
+  DuxLine *line = nil;
   
   NSMutableSet *lineLayers = [[NSMutableSet alloc] init];
-  BOOL isFirst = YES;
   while (yOffset > (-0.1 - DUX_LINE_HEIGHT)) {
-    if (isFirst) {
-      isFirst = NO;
+    if (!line) {
+      line = [self.storage lineStartingAtByteLocation:self.scrollPosition];
     } else {
       line = [self.storage lineAfterLine:line];
     }
@@ -1552,9 +1555,9 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)updateSelectionLayers
 {
-  for (DuxTextViewSelection *selection in self.selections) {
-    [selection updateLayer];
-  }
+//  for (DuxTextViewSelection *selection in self.selections) {
+//    [selection updateLayer];
+//  }
   return;
   
   NSUInteger selectionCount = self.selections.count;
@@ -1605,40 +1608,40 @@ static NSCharacterSet *newlineCharacterSet;
 
 - (void)pauseInsertionPointBlinking // this will disable the insertion point's blinking animation for a moment, then resume it
 {
-  NSUInteger selectionCount = self.selections.count;
-  if (selectionCount == 0)
-    return;
-  
-  NSTimeInterval delay = 0.4;
-  self.dateToResumeInsertionPointBlinking = [NSDate dateWithTimeIntervalSinceNow:delay];
-  
-  for (NSUInteger selectionIndex = 0; selectionIndex < selectionCount; selectionIndex++) {
-    DuxTextViewSelection *selection = [self.selections objectAtIndex:selectionIndex];
-    NSRange range = selection.range;
-    if (range.length > 0)
-      continue;
-    
-    CALayer *layer = [self.selectionLayers objectAtIndex:selectionIndex];
-    [layer removeAnimationForKey:@"blink"];
-    layer.opacity = 1.0;
-  }
-  
-  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC));
-  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-    if ([self.dateToResumeInsertionPointBlinking timeIntervalSinceNow] > 0.01) // make sure the delay hasn't been extended
-      return;
-    
-    NSUInteger selectionCount = self.selections.count;
-    for (NSUInteger selectionIndex = 0; selectionIndex < selectionCount; selectionIndex++) {
-      DuxTextViewSelection *selection = [self.selections objectAtIndex:selectionIndex];
-      NSRange range = selection.range;
-      if (range.length > 0)
-        continue;
-      
-      CALayer *layer = [self.selectionLayers objectAtIndex:selectionIndex];
-      [layer addAnimation:insertionPointBlinkAnimation forKey:@"blink"];
-    }
-  });
+//  NSUInteger selectionCount = self.selections.count;
+//  if (selectionCount == 0)
+//    return;
+//  
+//  NSTimeInterval delay = 0.4;
+//  self.dateToResumeInsertionPointBlinking = [NSDate dateWithTimeIntervalSinceNow:delay];
+//  
+//  for (NSUInteger selectionIndex = 0; selectionIndex < selectionCount; selectionIndex++) {
+//    DuxTextViewSelection *selection = [self.selections objectAtIndex:selectionIndex];
+//    NSRange range = selection.range;
+//    if (range.length > 0)
+//      continue;
+//    
+//    CALayer *layer = [self.selectionLayers objectAtIndex:selectionIndex];
+//    [layer removeAnimationForKey:@"blink"];
+//    layer.opacity = 1.0;
+//  }
+//  
+//  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC));
+//  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+//    if ([self.dateToResumeInsertionPointBlinking timeIntervalSinceNow] > 0.01) // make sure the delay hasn't been extended
+//      return;
+//    
+//    NSUInteger selectionCount = self.selections.count;
+//    for (NSUInteger selectionIndex = 0; selectionIndex < selectionCount; selectionIndex++) {
+//      DuxTextViewSelection *selection = [self.selections objectAtIndex:selectionIndex];
+//      NSRange range = selection.range;
+//      if (range.length > 0)
+//        continue;
+//      
+//      CALayer *layer = [self.selectionLayers objectAtIndex:selectionIndex];
+//      [layer addAnimation:insertionPointBlinkAnimation forKey:@"blink"];
+//    }
+//  });
 }
 
 - (void)selectionDidChange:(NSNotification *)notif

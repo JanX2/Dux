@@ -361,7 +361,7 @@
 		38D4B48F17209FA300B2EDEC /* DuxAcknowledgementsController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxAcknowledgementsController.h; sourceTree = "<group>"; };
 		38D4B49017209FA300B2EDEC /* DuxAcknowledgementsController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxAcknowledgementsController.m; sourceTree = "<group>"; };
 		38D4B4921720A28D00B2EDEC /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fonts; sourceTree = SOURCE_ROOT; };
-		38D605831403859600D70F81 /* Dux.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Dux.app; path = "Dux - text view rewrite.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		38D605831403859600D70F81 /* Dux - text view rewrite.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Dux - text view rewrite.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		38D605871403859600D70F81 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		38D6058A1403859600D70F81 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		38D6058B1403859600D70F81 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
@@ -745,7 +745,7 @@
 		38D605841403859600D70F81 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				38D605831403859600D70F81 /* Dux.app */,
+				38D605831403859600D70F81 /* Dux - text view rewrite.app */,
 				386EC888172A22B9000C7430 /* DuxSyntaxHighlighterTests.octest */,
 			);
 			name = Products;
@@ -933,7 +933,7 @@
 			);
 			name = Dux;
 			productName = Dux;
-			productReference = 38D605831403859600D70F81 /* Dux.app */;
+			productReference = 38D605831403859600D70F81 /* Dux - text view rewrite.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */

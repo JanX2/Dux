@@ -50,12 +50,11 @@
   STAssertEquals(@"hello world".length, line.range.length, nil);
   
   line = [storage lineStartingAtByteLocation:3];
-  STAssertEquals((NSUInteger)0, line.range.location, nil);
-  STAssertEquals(@"hello world".length, line.range.length, nil);
+  STAssertEquals(@"hel".length, line.range.location, nil);
+  STAssertEquals(@"lo world".length, line.range.length, nil);
   
   line = [storage lineStartingAtByteLocation:@"hello world".length];
-  STAssertEquals((NSUInteger)0, line.range.location, nil);
-  STAssertEquals(@"hello world".length, line.range.length, nil);
+  STAssertNil(line, nil);
   
   // storage with multiple lines
   storage = [[DuxTextStorage alloc] init];
@@ -63,43 +62,30 @@
   
   line = [storage lineStartingAtByteLocation:0];
   STAssertEquals((NSUInteger)0, line.range.location, nil);
-  STAssertEquals(@"hello world".length, line.range.length, nil);
+  STAssertEquals(@"hello world\n".length, line.range.length, nil);
   
   line = [storage lineStartingAtByteLocation:3];
-  STAssertEquals((NSUInteger)0, line.range.location, nil);
-  STAssertEquals(@"hello world".length, line.range.length, nil);
+  STAssertEquals(@"hel".length, line.range.location, nil);
+  STAssertEquals(@"lo world\n".length, line.range.length, nil);
   
   line = [storage lineStartingAtByteLocation:@"hello world".length];
-  STAssertEquals((NSUInteger)0, line.range.location, nil);
-  STAssertEquals(@"hello world".length, line.range.length, nil);
+  STAssertEquals(@"hello world".length, line.range.location, nil);
+  STAssertEquals(@"\n".length, line.range.length, nil);
   
-  line = [storage lineStartingAtByteLocation:@"hello world".length + 1];
-  STAssertEquals((NSUInteger)@"hello world".length + 1, line.range.location, nil);
-  STAssertEquals(@"foobar".length, line.range.length, nil);
+  line = [storage lineStartingAtByteLocation:@"hello world\n".length];
+  STAssertEquals(@"hello world\n".length, line.range.location, nil);
+  STAssertEquals(@"foobar\n".length, line.range.length, nil);
   
-  line = [storage lineStartingAtByteLocation:@"hello world".length + 3];
-  STAssertEquals((NSUInteger)@"hello world".length + 1, line.range.location, nil);
-  STAssertEquals(@"foobar".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world\nfoobar".length];
-  STAssertEquals((NSUInteger)@"hello world".length + 1, line.range.location, nil);
-  STAssertEquals(@"foobar".length, line.range.length, nil);
+  line = [storage lineStartingAtByteLocation:@"hello world\nfo".length];
+  STAssertEquals(@"hello world\nfo".length, line.range.location, nil);
+  STAssertEquals(@"obar\n".length, line.range.length, nil);
   
   line = [storage lineStartingAtByteLocation:@"hello world\nfoobar\n".length];
-  STAssertEquals((NSUInteger)@"hello world\nfoobar".length + 1, line.range.location, nil);
-  STAssertEquals(@"".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world\nfoobar\n\n".length];
-  STAssertEquals((NSUInteger)@"hello world\nfoobar\n".length + 1, line.range.location, nil);
-  STAssertEquals(@"test".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world\nfoobar\n\ntest".length];
-  STAssertEquals((NSUInteger)@"hello world\nfoobar\n".length + 1, line.range.location, nil);
-  STAssertEquals(@"test".length, line.range.length, nil);
+  STAssertEquals((NSUInteger)@"hello world\nfoobar\n".length, line.range.location, nil);
+  STAssertEquals(@"\n".length, line.range.length, nil);
   
   line = [storage lineStartingAtByteLocation:@"hello world\nfoobar\n\ntest\n".length];
-  STAssertEquals((NSUInteger)@"hello world\nfoobar\n\ntest\n".length, line.range.location, nil);
-  STAssertEquals(@"".length, line.range.length, nil);
+  STAssertNil(line, nil);
   
   // storage with windows newlines
   storage = [[DuxTextStorage alloc] init];
@@ -107,58 +93,26 @@
   
   line = [storage lineStartingAtByteLocation:0];
   STAssertEquals((NSUInteger)0, line.range.location, nil);
-  STAssertEquals(@"".length, line.range.length, nil);
+  STAssertEquals(@"\r\n".length, line.range.length, nil);
   
   line = [storage lineStartingAtByteLocation:1];
-  STAssertEquals(@"\r\n".length, line.range.location, nil);
-  STAssertEquals(@"hello world".length, line.range.length, nil);
+  STAssertEquals(@"\n".length, line.range.location, nil);
+  STAssertEquals(@"\n".length, line.range.length, nil);
   
   storage = [[DuxTextStorage alloc] init];
   storage.data = [@"hello world\r\nfoobar\r\n\r\ntest\r\n" dataUsingEncoding:NSUTF8StringEncoding];
   
   line = [storage lineStartingAtByteLocation:0];
   STAssertEquals((NSUInteger)0, line.range.location, nil);
-  STAssertEquals(@"hello world".length, line.range.length, nil);
+  STAssertEquals(@"hello world\r\n".length, line.range.length, nil);
   
-  line = [storage lineStartingAtByteLocation:3]; 
-  STAssertEquals((NSUInteger)0, line.range.location, nil);
-  STAssertEquals(@"hello world".length, line.range.length, nil);
+  line = [storage lineStartingAtByteLocation:@"hel".length];
+  STAssertEquals(@"hel".length, line.range.location, nil);
+  STAssertEquals(@"lo world\r\n".length, line.range.length, nil);
   
   line = [storage lineStartingAtByteLocation:@"hello world".length];
-  STAssertEquals((NSUInteger)0, line.range.location, nil);
-  STAssertEquals(@"hello world".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world".length + 1];
-  STAssertEquals((NSUInteger)@"hello world\r\n".length, line.range.location, nil);
-  STAssertEquals(@"foobar".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world".length + 2];
-  STAssertEquals((NSUInteger)@"hello world\r\n".length, line.range.location, nil);
-  STAssertEquals(@"foobar".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world".length + 3];
-  STAssertEquals((NSUInteger)@"hello world\r\n".length, line.range.location, nil);
-  STAssertEquals(@"foobar".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world\r\nfoobar".length];
-  STAssertEquals((NSUInteger)@"hello world\r\n".length, line.range.location, nil);
-  STAssertEquals(@"foobar".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world\r\nfoobar\r\n".length];
-  STAssertEquals((NSUInteger)@"hello world\r\nfoobar\r\n".length, line.range.location, nil);
-  STAssertEquals(@"".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world\r\nfoobar\r\n\r\n".length];
-  STAssertEquals((NSUInteger)@"hello world\r\nfoobar\r\n\r\n".length, line.range.location, nil);
-  STAssertEquals(@"test".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world\r\nfoobar\r\n\r\ntest".length];
-  STAssertEquals((NSUInteger)@"hello world\r\nfoobar\r\n\r\n".length, line.range.location, nil);
-  STAssertEquals(@"test".length, line.range.length, nil);
-  
-  line = [storage lineStartingAtByteLocation:@"hello world\r\nfoobar\r\n\r\ntest\r\n".length];
-  STAssertEquals((NSUInteger)@"hello world\r\nfoobar\r\n\r\ntest\r\n".length, line.range.location, nil);
-  STAssertEquals(@"".length, line.range.length, nil);
+  STAssertEquals(@"hello world".length, line.range.location, nil);
+  STAssertEquals(@"\r\n".length, line.range.length, nil);
 }
 
 - (void)testBeforeAndAfterLine
@@ -169,10 +123,10 @@
   
   DuxLine *line = [storage lineStartingAtByteLocation:0];
   STAssertNil([storage lineBeforeLine:line], nil);
-  STAssertEquals([storage lineAfterLine:line], [storage lineStartingAtByteLocation:@"foo\n".length], nil);
+  STAssertEquals([storage lineAfterLine:line].range, [storage lineStartingAtByteLocation:@"foo\n".length].range, nil);
   
   line = [storage lineStartingAtByteLocation:@"foo\n".length];
-  STAssertEquals([storage lineBeforeLine:line], [storage lineStartingAtByteLocation:0], nil);
+  STAssertEquals([storage lineBeforeLine:line].range, [storage lineStartingAtByteLocation:0].range, nil);
   STAssertNil([storage lineAfterLine:line], nil);
   
   // test empty lines
@@ -181,18 +135,47 @@
   
   line = [storage lineStartingAtByteLocation:0];
   STAssertNil([storage lineBeforeLine:line], nil);
-  STAssertEquals([storage lineAfterLine:line], [storage lineStartingAtByteLocation:@"\n".length], nil);
+  STAssertEquals([storage lineAfterLine:line].range, [storage lineStartingAtByteLocation:@"\n".length].range, nil);
   
   line = [storage lineStartingAtByteLocation:@"\nfoo".length];
-  STAssertEquals([storage lineAfterLine:line], [storage lineStartingAtByteLocation:@"\nfoo\n".length], nil);
+  STAssertEquals([storage lineAfterLine:line].range, [storage lineStartingAtByteLocation:@"\nfoo\n".length].range, nil);
   
   line = [storage lineStartingAtByteLocation:@"\nfoo\n".length];
-  STAssertEquals([storage lineAfterLine:line], [storage lineStartingAtByteLocation:@"\nfoo\n\n".length], nil);
+  STAssertEquals([storage lineAfterLine:line].range, [storage lineStartingAtByteLocation:@"\nfoo\n\n".length].range, nil);
   
   line = [storage lineStartingAtByteLocation:@"\nfoo\n\nbar".length];
   STAssertEquals([storage lineAfterLine:line], [storage lineStartingAtByteLocation:@"\nfoo\n\nbar\n".length], nil);
+}
+
+- (void)testLastLine
+{
+  // empty storage
+  DuxTextStorage *storage = [[DuxTextStorage alloc] init];
+  storage.data = [@"" dataUsingEncoding:NSUTF8StringEncoding];
   
+  DuxLine *line = [storage lastLine];
+  STAssertNil(line, nil);
   
+  // real line at the end
+  storage = [[DuxTextStorage alloc] init];
+  storage.data = [@"foo\nbar" dataUsingEncoding:NSUTF8StringEncoding];
+  
+  line = [storage lastLine];
+  STAssertEquals(line.range, NSMakeRange(@"foo\n".length, @"bar".length), nil);
+  
+  // empty unix newline at the end
+  storage = [[DuxTextStorage alloc] init];
+  storage.data = [@"foo\nbar\n" dataUsingEncoding:NSUTF8StringEncoding];
+  
+  line = [storage lastLine];
+  STAssertEquals(line.range, NSMakeRange(@"foo\n".length, @"bar\n".length), nil);
+  
+  // empty windows newline at the end
+  storage = [[DuxTextStorage alloc] init];
+  storage.data = [@"foo\nbar\r\n" dataUsingEncoding:NSUTF8StringEncoding];
+  
+  line = [storage lastLine];
+  STAssertEquals(line.range, NSMakeRange(@"foo\n".length, @"bar\r\n".length), nil);
 }
 
 @end

@@ -18,6 +18,16 @@
 
 @implementation DuxTextViewSelection
 
+static CGFloat mainScreenBackingScaleFactor;
+
++ (void)initialize
+{
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    mainScreenBackingScaleFactor = [NSScreen mainScreen].backingScaleFactor;
+  });
+}
+
 + (id)selectionWithRange:(NSRange)range inTextView:(DuxTextView *)view
 {
   return [[[self class] alloc] initWithRange:range inTextView:view];
@@ -105,7 +115,7 @@
   layer = [[CALayer alloc] init];
   layer.anchorPoint = CGPointMake(0, 0);
   layer.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;
-  layer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
+  layer.contentsScale = mainScreenBackingScaleFactor;
   
   if (self.range.length == 0) {
     DuxLine *insertionPointLine = [self.view.storage lineStartingAtByteLocation:self.range.location];

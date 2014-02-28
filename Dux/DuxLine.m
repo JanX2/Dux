@@ -13,6 +13,7 @@
 
 static NSDictionary *lineNumberAttributes;
 
+
 @interface DuxLine ()
 
 @property NSRange range;
@@ -25,11 +26,14 @@ static NSDictionary *lineNumberAttributes;
 @implementation DuxLine
 
 static NSCharacterSet *nonWhitespaceCharacterSet;
+static CGFloat mainScreenBackingScaleFactor;
 
 + (void)initialize
 {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
+    mainScreenBackingScaleFactor = [NSScreen mainScreen].backingScaleFactor;
+    
     nonWhitespaceCharacterSet = [[NSCharacterSet whitespaceCharacterSet] invertedSet];
     
     NSMutableParagraphStyle *paragraphStyle = [[[NSParagraphStyle alloc] init] mutableCopy];
@@ -60,7 +64,7 @@ static NSCharacterSet *nonWhitespaceCharacterSet;
   self.range = range;
   self.lineNumber = NSUIntegerMax;
   self.drawsAsynchronously = NO;
-  self.contentsScale = [NSScreen mainScreen].backingScaleFactor;
+  self.contentsScale = mainScreenBackingScaleFactor;
   
   self.contentsGravity = kCAGravityTopLeft;
   self.autoresizingMask = kCALayerMinYMargin | kCALayerMaxXMargin;
