@@ -30,6 +30,9 @@ static NSCharacterSet *newlineCharacters;
   
   contents = [[NSData alloc] init];
   
+  lineCache = [[NSCache alloc] init];
+  lineCache.countLimit = 1000;
+  
   NSMutableParagraphStyle *paragraphStyle = [NSParagraphStyle defaultParagraphStyle].mutableCopy;
   paragraphStyle.tabStops = @[];
   paragraphStyle.alignment = NSLeftTextAlignment;
@@ -165,20 +168,29 @@ static NSCharacterSet *newlineCharacters;
   if (byteLocation == self.length)
     return nil;
   
+  NSNumber *lineCacheKey = [NSNumber numberWithUnsignedInteger:byteLocation];
+  DuxLine *line = [lineCache objectForKey:lineCacheKey];
+  if (line) {
+    return line;
+  }
+  
   // is there a newline at this byte offset? handle it specially
   if (self.length >= byteLocation + 2) {
     UInt8 possibleNewlineBytes[2];
     [self.data getBytes:&possibleNewlineBytes range:NSMakeRange(byteLocation, 2)];
     
     if (possibleNewlineBytes[0] == '\n') {
-      DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
+      line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
+      [lineCache setObject:line forKey:lineCacheKey];
       return line;
     } else if (possibleNewlineBytes[0] == '\r') {
       if (possibleNewlineBytes[1] == '\n') {
-        DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 2)];
+        line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 2)];
+        [lineCache setObject:line forKey:lineCacheKey];
         return line;
       }
-      DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
+      line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
+      [lineCache setObject:line forKey:lineCacheKey];
       return line;
     }
   } else if (self.length >= byteLocation + 1) {
@@ -186,7 +198,8 @@ static NSCharacterSet *newlineCharacters;
     [self.data getBytes:&possibleNewlineBytes range:NSMakeRange(byteLocation, 1)];
     
     if (possibleNewlineBytes[0] == '\n' || possibleNewlineBytes[0] == '\r') {
-      DuxLine *line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
+      line = [[DuxLine alloc] initWithString:CFAttributedStringCreate(NULL, (CFStringRef)@"", (__bridge CFDictionaryRef)(self.textAttributes)) byteRange:NSMakeRange(byteLocation, 1)];
+      [lineCache setObject:line forKey:lineCacheKey];
       return line;
     }
   }
@@ -243,7 +256,8 @@ static NSCharacterSet *newlineCharacters;
   // TODO: syntax highlighting might go here
   
   // create the line
-  DuxLine *line = [[DuxLine alloc] initWithString:lineString byteRange:NSMakeRange(byteLocation, lineBytesLength)];
+  line = [[DuxLine alloc] initWithString:lineString byteRange:NSMakeRange(byteLocation, lineBytesLength)];
+  [lineCache setObject:line forKey:lineCacheKey];
   
   return line;
 }

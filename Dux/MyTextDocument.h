@@ -23,6 +23,7 @@
 
 @property (nonatomic, strong) NSTextStorage *textStorage;
 @property (nonatomic, strong) DuxTextView *textView;
+@property (nonatomic, strong) NSScrollView *scrollView;
 @property NSStringEncoding stringEncoding;
 //@property (nonatomic, strong) DuxFileContentsWatcher *fileContentsWatcher;
 

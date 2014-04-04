@@ -21,6 +21,11 @@
   [super initialize];
 }
 
++ (BOOL)isCompatibleWithResponsiveScrolling
+{
+  return YES;
+}
+
 - (id)init
 {
     self = [super init];
@@ -29,7 +34,7 @@
       textContentStorage = [[DuxTextStorage alloc] init];
       
       self.textView = [[DuxTextView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100) storage:textContentStorage];
-      self.textView.autoresizingMask =    NSViewMinXMargin | NSViewWidthSizable | NSViewMaxXMargin | NSViewMinYMargin | NSViewHeightSizable | NSViewMaxYMargin;
+//      self.textView.autoresizingMask =    NSViewMinXMargin | NSViewWidthSizable | NSViewMaxXMargin | NSViewMinYMargin | NSViewHeightSizable | NSViewMaxYMargin;
 //      self.textView.minSize = NSMakeSize(0, 100);
 //      self.textView.maxSize = NSMakeSize(FLT_MAX, FLT_MAX);
 //      [self.textView setVerticallyResizable:YES];
@@ -37,6 +42,13 @@
 //      self.textView.usesFindBar = YES;
       self.textView.textDocument = self;
 //      self.textView.typingAttributes = @{NSFontAttributeName:[DuxPreferences editorFont]};
+      
+      self.scrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100)];
+      self.scrollView.hasHorizontalScroller = NO;
+      self.scrollView.hasVerticalScroller = YES;
+      self.scrollView.borderType = NSNoBorder;
+      self.scrollView.autoresizingMask =    NSViewMinXMargin | NSViewWidthSizable | NSViewMaxXMargin | NSViewMinYMargin | NSViewHeightSizable | NSViewMaxYMargin;
+      self.scrollView.documentView = self.textView;
       
 if ([DuxPreferences editorDarkMode]) {
       self.textView.backgroundColor = [NSColor colorWithCalibratedWhite:0.2 alpha:1];
@@ -97,8 +109,9 @@ if ([DuxPreferences editorDarkMode]) {
 {
   self.editorWindow = controller.editorWindow;
   
-  [self.textView setFrame:NSMakeRect(0, 0, documentView.frame.size.width, documentView.frame.size.height)];
-  [documentView addSubview:self.textView];
+  self.textView.frame = NSMakeRect(0, 0, documentView.frame.size.width, documentView.frame.size.height);
+  self.scrollView.frame = NSMakeRect(0, 0, documentView.frame.size.width, documentView.frame.size.height);
+  [documentView addSubview:self.scrollView];
   
   
   // make sure scroll bars are good

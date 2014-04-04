@@ -33,8 +33,8 @@
 @property NSColor *insertionPointColor;
 @property DuxTextStorage *storage;
 
-@property NSUInteger scrollPosition; // character offset of the first visible line
-@property CGFloat scrollDelta; // pixel offset to be added on top of scrollPosition, to allow for precise scrolling
+@property NSUInteger scrollPosition; // character offset of the first rendered line
+@property CGFloat scrollDelta; // pixel offset to be used for the first rendered line
 
 @property (strong) IBOutlet NSPanel *goToLinePanel;
 @property (weak) IBOutlet NSSearchField *goToLineSearchField;

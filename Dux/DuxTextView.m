@@ -106,6 +106,33 @@ static CGFloat mainScreenBackingScaleFactor;
   [notifCenter addObserver:self selector:@selector(pageGuidePositionDidChange:) name:DuxPreferencesPageGuidePositionDidChangeNotification object:nil];
 	[notifCenter addObserver:self selector:@selector(editorTabWidthDidChange:) name:DuxPreferencesTabWidthDidChangeNotification object:nil];
 	[notifCenter addObserver:self selector:@selector(textContainerSizeDidChange:) name:DuxTextContainerSizeDidChangeNotification object:container];
+  
+  // wait a moment, then find our scroll view, and register for scroll events
+  double delayInSeconds = 0.1;
+  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+    NSClipView *contentView = self.enclosingScrollView.contentView;
+    if (!contentView) {
+      [NSException raise:@"Can't find scroll view" format:@"could not find a scroll view for dux text view %@", self];
+    }
+    
+    contentView.postsBoundsChangedNotifications = YES;
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(scrollContentsViewBoundsDidChange:) name:NSViewBoundsDidChangeNotification object:contentView];
+  });
+}
+
+- (void)setFrame:(NSRect)frameRect
+{
+  [self setFrame:frameRect withScrollBoundsUpdate:YES];
+}
+
+- (void)setFrame:(NSRect)frameRect withScrollBoundsUpdate:(BOOL)scrollBoundsUpdate
+{
+  [super setFrame:frameRect];
+  
+  if (scrollBoundsUpdate) {
+    [self scrollContentsViewBoundsDidChange:nil];
+  }
 }
 
 - (NSPoint)textContainerOrigin
@@ -975,16 +1002,16 @@ static CGFloat mainScreenBackingScaleFactor;
       [self moveDown:self];
       return;
     case NSHomeFunctionKey:
-      [self scrollToBeginningOfDocument:self];
+      [self animatedScrollToY:self.frame.size.height];
       return;
     case NSEndFunctionKey:
-      [self scrollToEndOfDocument:self];
+      [self animatedScrollToY:self.enclosingScrollView.contentView.bounds.size.height];
       return;
     case NSPageUpFunctionKey:
-      [self scrollPageUp:self];
+      [self.enclosingScrollView pageUp:self];
       return;
     case NSPageDownFunctionKey:
-      [self scrollPageDown:self];
+      [self.enclosingScrollView pageDown:self];
       return;
     case NSDeleteCharacter: // "delete" on mac keyboards, but "backspace" on others
       if (([theEvent modifierFlags] & NSControlKeyMask)) {
@@ -1015,6 +1042,21 @@ static CGFloat mainScreenBackingScaleFactor;
   }
   
   [self insertText:theEvent.characters];
+}
+
+- (void)animatedScrollToY:(CGFloat)y
+{
+  NSClipView *clipView = self.enclosingScrollView.contentView;
+  
+  [self.enclosingScrollView flashScrollers];
+  
+  [NSAnimationContext beginGrouping];
+  
+  NSPoint newOrigin = clipView.bounds.origin;
+  newOrigin.y = y;
+  clipView.animator.boundsOrigin = newOrigin;
+  
+  [NSAnimationContext endGrouping];
 }
 
 - (BOOL)insertionPointInLeadingWhitespace
@@ -1501,41 +1543,168 @@ static CGFloat mainScreenBackingScaleFactor;
   return 0;
 }
 
+- (void)scrollContentsViewBoundsDidChange:(NSNotification *)notification
+{
+  // wait until the user has stopped scrolling, then process scroll
+  static NSDate *lastScrollDate = nil;
+  lastScrollDate = [NSDate date];
+  NSDate *thisScrollDate = lastScrollDate.copy;
+  
+  double delayInSeconds = 1.0;
+  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+  dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+    if (thisScrollDate != lastScrollDate)
+      return;
+    
+    lastScrollDate = nil;
+    
+    // find all the lines that should be visible TODO: this needs to use the existing set of line layers as a starting point, and only ask the storage for lines that we don't already have
+    CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
+    CGFloat yFromTop = self.scrollDelta;
+    
+    NSRect visibleRect = self.enclosingScrollView.contentView.documentVisibleRect;
+    CGFloat minYFromBottom = NSMinY(visibleRect) - 5000;
+    minYFromBottom += DUX_LINE_HEIGHT - ((NSUInteger)minYFromBottom % DUX_LINE_HEIGHT); // round to next line increment
+    if (minYFromBottom < 0)
+      minYFromBottom = 0;
+    
+    CGFloat maxYFromBottom = NSMaxY(visibleRect) + DUX_LINE_HEIGHT + 5000;
+    maxYFromBottom += DUX_LINE_HEIGHT - ((NSUInteger)maxYFromBottom % DUX_LINE_HEIGHT); // round to next line increment
+    if (maxYFromBottom > self.frame.size.height)
+      maxYFromBottom = self.frame.size.height;
+    
+    NSRange renderedByteRange = NSMakeRange(NSNotFound, NSNotFound);
+    NSRange renderedPixelRange = NSMakeRange(NSNotFound, NSNotFound);
+    
+    DuxLine *line = nil;
+    
+    NSMutableSet *lineLayers = [[NSMutableSet alloc] init];
+    BOOL lastLineRendered = NO;
+    while (true) {
+      CGFloat yFromBottom = self.frame.size.height - yFromTop;
+      
+      if (!line) {
+        line = [self.storage lineStartingAtByteLocation:self.scrollPosition];
+      } else {
+        line = [self.storage lineAfterLine:line];
+      }
+      if (!line)
+        break;
+      
+      if (renderedByteRange.location == NSNotFound || line.range.location < renderedByteRange.location) {
+        renderedByteRange.location = line.range.location;
+        renderedPixelRange.location = yFromTop;
+      }
+      if (renderedByteRange.length == NSNotFound || NSMaxRange(line.range) > NSMaxRange(renderedByteRange)) {
+        renderedByteRange.length = NSMaxRange(line.range) - renderedByteRange.location;
+        renderedPixelRange.length = (yFromTop + DUX_LINE_HEIGHT) - renderedPixelRange.location;
+      }
+      
+      if (yFromBottom > minYFromBottom && yFromBottom < maxYFromBottom) {
+//        [line setFrameWithTopLeftOrigin:CGPointMake(leftGutter, yFromBottom) width:lineWidth];
+//        [lineLayers addObject:line];
+        lastLineRendered = YES;
+      } else {
+        if (lastLineRendered) { // run out of visible lines. stop now
+          break;
+        } else { // should not have rendered this line
+//          self.scrollPosition = line.range.location;
+//          self.scrollDelta = yFromTop - DUX_LINE_HEIGHT;
+        }
+      }
+      
+      yFromTop += DUX_LINE_HEIGHT;
+      yFromTop = round(yFromTop);
+    }
+    if (renderedByteRange.location == NSNotFound) {
+      NSLog(@"no visible lines!");
+      return;
+    }
+    
+    CGFloat bytesToPixelRatio = (CGFloat)renderedPixelRange.length / (CGFloat)renderedByteRange.length; // average number of bytes per vertical pixel
+    CGFloat estimatedHeight = round(self.storage.length * bytesToPixelRatio);
+    estimatedHeight += DUX_LINE_HEIGHT - ((NSUInteger)estimatedHeight % DUX_LINE_HEIGHT); // round to next line increment
+    
+    CGFloat heightDelta = estimatedHeight - self.frame.size.height;
+    if (fabsf(heightDelta) < 0.1)
+      return;
+    
+    NSRect newFrame = NSMakeRect(self.frame.origin.x, self.frame.origin.y - heightDelta, self.frame.size.width, estimatedHeight);
+    [self setFrame:newFrame withScrollBoundsUpdate:NO];
+
+//    NSLog(@"-");
+//    NSLog(@"%@", NSStringFromRect(self.enclosingScrollView.contentView.bounds));
+//    NSLog(@"height: %f, adding: %f. byte range: %@. y range: %@", self.frame.size.height, heightDelta, NSStringFromRange(visibleByteRange), NSStringFromRange(visiblePixelRange));
+//    NSLog(@"-");
+  });
+}
+
 - (void)updateLayer
 {
-  [CATransaction begin];
-  [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disable all animations. for now we assume only the line positions will change (don't want to animate that). any line height changes, we will animate
-  
-  // find all the lines that should be visible TODO: this needs to use the existing set of line layers as a starting point, and only ask the storage for lines that we don't already have
   CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
-  CGFloat yOffset = round(self.frame.size.height + self.scrollDelta);
+  CGFloat yFromTop = self.scrollDelta;
+  CGFloat yFromBottom = self.frame.size.height - yFromTop;
   
-  DuxLine *line = nil;
+  NSRect visibleRect = self.enclosingScrollView.contentView.documentVisibleRect;
+  CGFloat minYFromBottom = NSMinY(visibleRect) - 5000;
+  minYFromBottom += DUX_LINE_HEIGHT - ((NSUInteger)minYFromBottom % DUX_LINE_HEIGHT); // round to next line increment
+  if (minYFromBottom < 0)
+    minYFromBottom = 0;
   
+  CGFloat maxYFromBottom = NSMaxY(visibleRect) + DUX_LINE_HEIGHT + 5000;
+  maxYFromBottom += DUX_LINE_HEIGHT - ((NSUInteger)maxYFromBottom % DUX_LINE_HEIGHT); // round to next line increment
+  if (maxYFromBottom > self.frame.size.height)
+    maxYFromBottom = self.frame.size.height;
+  
+  // first line at scroll position
+  DuxLine *line = [self.storage lineStartingAtByteLocation:self.scrollPosition];
+  
+  // is scroll position too far down?
+//  if ((yFromBottom + DUX_LINE_HEIGHT + 0.1) < maxYFromBottom) {
+//    [line setFrameWithTopLeftOrigin:CGPointMake(leftGutter, yFromBottom) width:lineWidth];
+//  }
+  
+  // load line layers
   NSMutableSet *lineLayers = [[NSMutableSet alloc] init];
-  while (yOffset > (-0.1 - DUX_LINE_HEIGHT)) {
-    if (!line) {
-      line = [self.storage lineStartingAtByteLocation:self.scrollPosition];
+  BOOL lastLineVisible = NO;
+  while (line) {
+    if (yFromBottom > (minYFromBottom - 0.1) && yFromBottom < (maxYFromBottom + 0.1)) {
+      if (!lastLineVisible) {
+        self.scrollDelta = yFromTop;
+        self.scrollPosition = line.range.location;
+      }
+      
+      [line setFrameWithTopLeftOrigin:CGPointMake(leftGutter, yFromBottom) width:lineWidth];
+      [lineLayers addObject:line];
+      lastLineVisible = YES;
     } else {
-      line = [self.storage lineAfterLine:line];
+      if (lastLineVisible) { // run out of visible lines. stop now
+        break;
+      }
     }
-    if (!line)
-      break;
     
-    [line setFrameWithTopLeftOrigin:CGPointMake(leftGutter, yOffset) width:lineWidth];
-    
-    [lineLayers addObject:line];
-    
-    yOffset -= DUX_LINE_HEIGHT;
-    yOffset = round(yOffset);
+    yFromTop += DUX_LINE_HEIGHT;
+    yFromTop = round(yFromTop);
+    yFromBottom = self.frame.size.height - yFromTop;
+    line = [self.storage lineAfterLine:line];
   }
   
+  
+
+  
+  BOOL didBeginTransaction = NO;
   for (CALayer *layer in self.layer.sublayers.copy) {
     if ([self.selectionLayers containsObject:layer])
       continue;
     
     if ([lineLayers containsObject:layer])
       continue;
+    
+    if (!didBeginTransaction) {
+      didBeginTransaction = YES;
+      [CATransaction begin];
+      [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disable all animations. for now we assume only the line positions will change (don't want to animate that). any line height changes, we will animate
+    }
     
     [layer removeFromSuperlayer];
   }
@@ -1544,11 +1713,19 @@ static CGFloat mainScreenBackingScaleFactor;
     if ([self.layer.sublayers containsObject:layer])
       continue;
     
+    if (!didBeginTransaction) {
+      didBeginTransaction = YES;
+      [CATransaction begin];
+      [CATransaction setValue: (id) kCFBooleanTrue forKey: kCATransactionDisableActions]; // disable all animations. for now we assume only the line positions will change (don't want to animate that). any line height changes, we will animate
+    }
+    
     [self.layer addSublayer:layer];
     [layer setNeedsDisplay];
   }
   
-  [CATransaction commit];
+  if (didBeginTransaction) {
+    [CATransaction commit];
+  }
   
   [self updateSelectionLayers];
 }
@@ -1853,6 +2030,7 @@ static CGFloat mainScreenBackingScaleFactor;
   return line.range.location;
 }
 
+/*
 - (void)scrollWheel:(NSEvent *)event
 {
   NSEventPhase phase = event.phase;
@@ -1935,12 +2113,13 @@ static CGFloat mainScreenBackingScaleFactor;
 
   [self updateLayer];
 }
+ */
 
 - (BOOL)isOpaque
 {
   return YES;
 }
-
+/*
 - (void)scrollPageUp:(id)sender
 {
   [self scrollBy:self.frame.size.height animated:YES];
@@ -1964,6 +2143,6 @@ static CGFloat mainScreenBackingScaleFactor;
   self.scrollDelta = 0;
   [self updateLayer];
 }
-
+*/
 
 @end

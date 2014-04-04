@@ -59,6 +59,8 @@ static CGFloat mainScreenBackingScaleFactor;
   if (!(self = [super init]))
     return nil;
   
+//  NSLog(@"line: init");
+  
   stringToDraw = CFRetain(string);
   
   self.range = range;
@@ -153,6 +155,7 @@ static CGFloat mainScreenBackingScaleFactor;
     return;
   
   [self setNeedsDisplay];
+//  NSLog(@"line: setNeedsDisplay");
   
   [super setFrame:newFrame];
 }
