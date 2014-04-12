@@ -182,30 +182,6 @@
 		C9F4E9451725543100E7AEC8 /* PaneGradientBar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F4E9431725543100E7AEC8 /* PaneGradientBar@2x.png */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		3839D921183046C800DCEBA3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3839D91B183046C800DCEBA3 /* Cocoa Script.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 8D15AC370486D014006FF6A4;
-			remoteInfo = "Cocoa Script Editor";
-		};
-		3839D923183046C800DCEBA3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3839D91B183046C800DCEBA3 /* Cocoa Script.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = CC5FB7C20F1FDCCC00F4ECC2;
-			remoteInfo = "coscript tool";
-		};
-		3839D925183046C800DCEBA3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3839D91B183046C800DCEBA3 /* Cocoa Script.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = CC41431A0F25254200E46669;
-			remoteInfo = "Cocoa Script Framework";
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXCopyFilesBuildPhase section */
 		38E063871820E8E0004D966B /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -265,7 +241,6 @@
 		3837FAB11475E058002CC459 /* NSStringDuxAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSStringDuxAdditions.m; sourceTree = "<group>"; };
 		38383A04146FB25C008CD049 /* DuxHTMLTagAttributeElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxHTMLTagAttributeElement.h; sourceTree = "<group>"; };
 		38383A05146FB25C008CD049 /* DuxHTMLTagAttributeElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxHTMLTagAttributeElement.m; sourceTree = "<group>"; };
-		3839D91B183046C800DCEBA3 /* Cocoa Script.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = "Cocoa Script.xcodeproj"; path = "../CocoaScript-ccgus/Cocoa Script.xcodeproj"; sourceTree = "<group>"; };
 		3839D927183046E000DCEBA3 /* MOJavaScriptObject.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MOJavaScriptObject.h; sourceTree = "<group>"; };
 		38487A111692A8040055EDAA /* DuxBundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxBundle.h; sourceTree = "<group>"; };
 		38487A121692A8040055EDAA /* DuxBundle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxBundle.m; sourceTree = "<group>"; };
@@ -610,16 +585,6 @@
 			name = Misc;
 			sourceTree = "<group>";
 		};
-		3839D91C183046C800DCEBA3 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				3839D922183046C800DCEBA3 /* Cocoa Script Editor.app */,
-				3839D924183046C800DCEBA3 /* coscript */,
-				3839D926183046C800DCEBA3 /* CocoaScript.framework */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		385115021692FA8E0066B876 /* Run Bundle */ = {
 			isa = PBXGroup;
 			children = (
@@ -839,7 +804,6 @@
 			isa = PBXGroup;
 			children = (
 				3839D927183046E000DCEBA3 /* MOJavaScriptObject.h */,
-				3839D91B183046C800DCEBA3 /* Cocoa Script.xcodeproj */,
 				388A4E37182673E600A9FD17 /* CocoaScript.framework */,
 				38E0638D1820EB2A004D966B /* Carbon.framework */,
 				38E0638B1820EB1E004D966B /* ScriptingBridge.framework */,
@@ -1062,12 +1026,6 @@
 			mainGroup = 38D605781403859600D70F81;
 			productRefGroup = 38D605841403859600D70F81 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 3839D91C183046C800DCEBA3 /* Products */;
-					ProjectRef = 3839D91B183046C800DCEBA3 /* Cocoa Script.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				38D605821403859600D70F81 /* Dux */,
@@ -1075,30 +1033,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		3839D922183046C800DCEBA3 /* Cocoa Script Editor.app */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.application;
-			path = "Cocoa Script Editor.app";
-			remoteRef = 3839D921183046C800DCEBA3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		3839D924183046C800DCEBA3 /* coscript */ = {
-			isa = PBXReferenceProxy;
-			fileType = "compiled.mach-o.executable";
-			path = coscript;
-			remoteRef = 3839D923183046C800DCEBA3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		3839D926183046C800DCEBA3 /* CocoaScript.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = CocoaScript.framework;
-			remoteRef = 3839D925183046C800DCEBA3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		386EC885172A22B9000C7430 /* Resources */ = {
@@ -1469,7 +1403,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					/Users/abhi/projects/Dux,
+					"$(SRCROOT)",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Dux/Dux-Prefix.pch";
@@ -1493,7 +1427,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					/Users/abhi/projects/Dux,
+					"$(SRCROOT)",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Dux/Dux-Prefix.pch";
