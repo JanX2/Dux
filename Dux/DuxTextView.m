@@ -1142,6 +1142,7 @@ static NSCharacterSet *newlineCharacterSet;
   // prepare search range
   NSUInteger insertionPoint = offset - lineRange.location;
   NSRange searchRange = NSMakeRange(MIN(insertionPoint + 1, searchString.length), searchString.length == 0 ? 0 : (searchString.length - (insertionPoint + 1)));
+  searchRange.length = MIN((NSInteger)searchRange.length, 0);
   
   // we may need to try the search again on the previous line
   NSUInteger newInsertionPoint = searchString.length;

@@ -11,6 +11,7 @@
 #import "MyTextDocument.h"
 #import "DuxPreferences.h"
 #import "DuxProjectWindowController.h"
+#import "NSTextStorageDuxAdditions.h"
 
 @implementation MyTextDocument
 
@@ -25,6 +26,7 @@
     if (self) {
       self.stringEncoding = NSUTF8StringEncoding;
       textContentStorage = [[NSTextStorage alloc] initWithString:@"" attributes:@{NSFontAttributeName:[DuxPreferences editorFont]}];
+      textContentStorage.usedForDuxTextView = YES;
       self.syntaxtHighlighter = [[DuxSyntaxHighlighter alloc] init];
       textContentStorage.delegate = self.syntaxtHighlighter;
       

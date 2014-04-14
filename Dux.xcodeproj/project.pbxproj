@@ -177,6 +177,7 @@
 		6C2EEB62172A4C2500B9E411 /* DuxJSONLanguage.m in Sources */ = {isa = PBXBuildFile; fileRef = 6C2EEB5A172A4C2500B9E411 /* DuxJSONLanguage.m */; };
 		6C2EEB63172A4C2500B9E411 /* DuxJSONNumberElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 6C2EEB5C172A4C2500B9E411 /* DuxJSONNumberElement.m */; };
 		6C2EEB64172A4C2500B9E411 /* DuxJSONStringElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 6C2EEB5E172A4C2500B9E411 /* DuxJSONStringElement.m */; };
+		6C73DF9618CCE7DF00197A74 /* NSTextStorageDuxAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 6C73DF9518CCE7DF00197A74 /* NSTextStorageDuxAdditions.m */; };
 		C97713171724C90B00AC1757 /* DuxNavigatorFileCell.m in Sources */ = {isa = PBXBuildFile; fileRef = C97713161724C90B00AC1757 /* DuxNavigatorFileCell.m */; };
 		C9F4E9441725543100E7AEC8 /* PaneGradientBar.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F4E9421725543100E7AEC8 /* PaneGradientBar.png */; };
 		C9F4E9451725543100E7AEC8 /* PaneGradientBar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F4E9431725543100E7AEC8 /* PaneGradientBar@2x.png */; };
@@ -451,6 +452,8 @@
 		6C2EEB5C172A4C2500B9E411 /* DuxJSONNumberElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxJSONNumberElement.m; sourceTree = "<group>"; };
 		6C2EEB5D172A4C2500B9E411 /* DuxJSONStringElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxJSONStringElement.h; sourceTree = "<group>"; };
 		6C2EEB5E172A4C2500B9E411 /* DuxJSONStringElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxJSONStringElement.m; sourceTree = "<group>"; };
+		6C73DF9418CCE7DF00197A74 /* NSTextStorageDuxAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSTextStorageDuxAdditions.h; sourceTree = "<group>"; };
+		6C73DF9518CCE7DF00197A74 /* NSTextStorageDuxAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSTextStorageDuxAdditions.m; sourceTree = "<group>"; };
 		C97713151724C90B00AC1757 /* DuxNavigatorFileCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxNavigatorFileCell.h; sourceTree = "<group>"; };
 		C97713161724C90B00AC1757 /* DuxNavigatorFileCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxNavigatorFileCell.m; sourceTree = "<group>"; };
 		C9F4E9421725543100E7AEC8 /* PaneGradientBar.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = PaneGradientBar.png; sourceTree = "<group>"; };
@@ -572,6 +575,8 @@
 			children = (
 				3837FAB01475E058002CC459 /* NSStringDuxAdditions.h */,
 				3837FAB11475E058002CC459 /* NSStringDuxAdditions.m */,
+				6C73DF9418CCE7DF00197A74 /* NSTextStorageDuxAdditions.h */,
+				6C73DF9518CCE7DF00197A74 /* NSTextStorageDuxAdditions.m */,
 				389C8EC2148B0E530029B942 /* DuxStringLineEnumerator.h */,
 				389C8EC3148B0E530029B942 /* DuxStringLineEnumerator.m */,
 				3822EAA9148623970068330B /* DuxScrollViewAnimation.h */,
@@ -1176,6 +1181,7 @@
 				385A1EA6147919A80084F48E /* DuxCSSPropertyNameElement.m in Sources */,
 				38110AE814791AF50028B786 /* DuxCSSPropertyValueElement.m in Sources */,
 				38110AEC14791C3D0028B786 /* DuxCSSNumberValueElement.m in Sources */,
+				6C73DF9618CCE7DF00197A74 /* NSTextStorageDuxAdditions.m in Sources */,
 				38110AEF14791E860028B786 /* DuxCSSColorValueElement.m in Sources */,
 				38BB441D147F5F54007CAB5B /* DuxOpenQuicklyTableViewCell.m in Sources */,
 				38CD8FA7147F8F0500062D34 /* DuxTextContainer.m in Sources */,

@@ -215,7 +215,7 @@
 {
   NSTextStorage *storage = notification.object;
   
-  if ((storage.editedMask & NSTextStorageEditedCharacters) && storage.changeInLength != 0) {
+  if ((storage.editedMask & NSTextStorageEditedCharacters)) {
     [self updateHighlightingForStorage:storage range:storage.editedRange];
   }
 }

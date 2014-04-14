@@ -87,7 +87,7 @@ static DuxJavaScriptRegexElement *regexElement;
         if (range.location != NSNotFound) {
           ch = [string.string characterAtIndex:range.location];
           
-          if (ch < 128 && strchr(",=:?([{&|ne", ch)) {
+          if (ch < 128 && strchr(",=:?!([{&|ne", ch)) {
             if (ch == 'n') {
               if (range.location >= 5 && [[string.string substringWithRange:NSMakeRange(range.location - 5, 5)] isEqualToString:@"retur"]) {
                 foundRegexPattern = YES;
