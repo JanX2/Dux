@@ -1559,7 +1559,6 @@ static CGFloat mainScreenBackingScaleFactor;
     lastScrollDate = nil;
     
     // find all the lines that should be visible TODO: this needs to use the existing set of line layers as a starting point, and only ask the storage for lines that we don't already have
-    CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
     CGFloat yFromTop = self.scrollDelta;
     
     NSRect visibleRect = self.enclosingScrollView.contentView.documentVisibleRect;
@@ -1578,7 +1577,6 @@ static CGFloat mainScreenBackingScaleFactor;
     
     DuxLine *line = nil;
     
-    NSMutableSet *lineLayers = [[NSMutableSet alloc] init];
     BOOL lastLineRendered = NO;
     while (true) {
       CGFloat yFromBottom = self.frame.size.height - yFromTop;
@@ -1601,15 +1599,10 @@ static CGFloat mainScreenBackingScaleFactor;
       }
       
       if (yFromBottom > minYFromBottom && yFromBottom < maxYFromBottom) {
-//        [line setFrameWithTopLeftOrigin:CGPointMake(leftGutter, yFromBottom) width:lineWidth];
-//        [lineLayers addObject:line];
         lastLineRendered = YES;
       } else {
         if (lastLineRendered) { // run out of visible lines. stop now
           break;
-        } else { // should not have rendered this line
-//          self.scrollPosition = line.range.location;
-//          self.scrollDelta = yFromTop - DUX_LINE_HEIGHT;
         }
       }
       
@@ -1631,11 +1624,6 @@ static CGFloat mainScreenBackingScaleFactor;
     
     NSRect newFrame = NSMakeRect(self.frame.origin.x, self.frame.origin.y - heightDelta, self.frame.size.width, estimatedHeight);
     [self setFrame:newFrame withScrollBoundsUpdate:NO];
-
-//    NSLog(@"-");
-//    NSLog(@"%@", NSStringFromRect(self.enclosingScrollView.contentView.bounds));
-//    NSLog(@"height: %f, adding: %f. byte range: %@. y range: %@", self.frame.size.height, heightDelta, NSStringFromRange(visibleByteRange), NSStringFromRange(visiblePixelRange));
-//    NSLog(@"-");
   });
 }
 
