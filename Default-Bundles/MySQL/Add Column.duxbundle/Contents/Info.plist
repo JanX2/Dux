@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Triggers</key>
+	<array>
+		<dict>
+			<key>Type</key>
+			<string>Tab</string>
+			<key>Word</key>
+			<string>fun</string>
+		</dict>
+	</array>
+	<key>Input</key>
+	<string>None</string>
+	<key>Output</key>
+	<string>InsertSnippet</string>
+	<key>Snippet</key>
+	<string>snippet.php</string>
+	<key>Type</key>
+	<string>Snippet</string>
+</dict>
+</plist>

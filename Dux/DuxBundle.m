@@ -75,16 +75,23 @@ static NSArray *loadedBundles;
     return bundlesURL;
   }
   
-  NSURL *appSupportDir = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:YES error:NULL];
+  NSURL *appSupportDir = [[[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:YES error:NULL] URLByAppendingPathComponent:@"Dux" isDirectory:YES];
+  if (![appSupportDir checkResourceIsReachableAndReturnError:NULL]) {
+    [[NSFileManager defaultManager] createDirectoryAtURL:appSupportDir withIntermediateDirectories:YES attributes:nil error:NULL];
+  }
   
-  bundlesURL = [appSupportDir URLByAppendingPathComponent:@"Dux/Bundles" isDirectory:YES];
-  
-  BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:bundlesURL.path];
-  if (!exists) {
-    [[NSFileManager defaultManager] createDirectoryAtURL:bundlesURL withIntermediateDirectories:YES attributes:nil error:NULL];
+  bundlesURL = [appSupportDir URLByAppendingPathComponent:@"Bundles" isDirectory:YES];
+  if (![bundlesURL checkResourceIsReachableAndReturnError:NULL]) {
+    [self createBundlesDir:bundlesURL];
   }
   
   return bundlesURL;
+}
+
++ (void)createBundlesDir:(NSURL *)bundlesURL
+{
+  NSURL *defaultBundles = [[NSBundle mainBundle] URLForResource:@"Default-Bundles" withExtension:nil];
+  [[NSFileManager defaultManager] copyItemAtURL:defaultBundles toURL:bundlesURL error:NULL];
 }
 
 + (NSArray *)allBundles

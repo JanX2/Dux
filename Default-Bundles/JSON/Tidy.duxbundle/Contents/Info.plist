@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Triggers</key>
+	<array/>
+	<key>Input</key>
+	<string>DocumentContents</string>
+	<key>Output</key>
+	<string>ReplaceDocument</string>
+	<key>Script</key>
+	<string>jsontidy.rb</string>
+	<key>Type</key>
+	<string>Script</string>
+</dict>
+</plist>

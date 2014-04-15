@@ -1,0 +1,39 @@
+
+/**
+ * Alphabetically sort lines in the currently selected text.
+ */
+
+function run(editor)
+{
+  // get selected text
+  var selectedText = [editor selectedText]
+  
+  // grab lines
+  var lines = [[selectedText componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]] mutableCopy]
+  
+  if (lines.length <= 1) {
+    var alert = [NSAlert alertWithMessageText:"Sort Lines" defaultButton:"OK" alternateButton:nil otherButton:nil informativeTextWithFormat:"Select at least two lines to sort."]
+    [alert runModal]
+    return
+  }
+  
+  // if the last line is empty, remove it and put it back at the end later (this way if you select a trailing newline it will not be moved to the begining)
+  var addBlankLineToEnd = (lines[lines.length-1] == "")
+  if (addBlankLineToEnd) {
+    lines.pop();
+  }
+  
+  // grab the active newline style (unix/windows/classic mac) and return the result
+  var newlineString = [editor newlineString]
+  
+  // do the sorting
+  [lines sortUsingSelector:"compare:"]
+  if (addBlankLineToEnd)
+    lines.push("")
+  var output = [lines componentsJoinedByString:newlineString]
+  
+  // insert it, without changing the selection
+  var selectedRange = [editor selectedRange]
+  [editor insertText:output]
+  [editor setSelectedRange:selectedRange]
+}

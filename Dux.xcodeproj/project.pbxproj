@@ -98,6 +98,7 @@
 		389B0178172B2418003ADE63 /* DuxCSSColorValueElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 38110AEE14791E850028B786 /* DuxCSSColorValueElement.m */; };
 		389B017B172B2513003ADE63 /* DuxCSSAtRuleElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 389B017A172B2512003ADE63 /* DuxCSSAtRuleElement.m */; };
 		389B017C172B2513003ADE63 /* DuxCSSAtRuleElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 389B017A172B2512003ADE63 /* DuxCSSAtRuleElement.m */; };
+		389BB90B18FD366B0023F14E /* Default-Bundles in Resources */ = {isa = PBXBuildFile; fileRef = 389BB90A18FD366B0023F14E /* Default-Bundles */; };
 		389C8EC4148B0E530029B942 /* DuxStringLineEnumerator.m in Sources */ = {isa = PBXBuildFile; fileRef = 389C8EC3148B0E530029B942 /* DuxStringLineEnumerator.m */; };
 		38ACB57117FE2DFE0087C97E /* AboutPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 38ACB57017FE2DFE0087C97E /* AboutPanel.xib */; };
 		38ACB57317FE32F90087C97E /* about-logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 38ACB57217FE32F90087C97E /* about-logo.png */; };
@@ -304,6 +305,7 @@
 		389ACC4C172265A100E01DB3 /* DuxNavigatorFilesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxNavigatorFilesViewController.m; sourceTree = "<group>"; };
 		389B0179172B2512003ADE63 /* DuxCSSAtRuleElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxCSSAtRuleElement.h; sourceTree = "<group>"; };
 		389B017A172B2512003ADE63 /* DuxCSSAtRuleElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxCSSAtRuleElement.m; sourceTree = "<group>"; };
+		389BB90A18FD366B0023F14E /* Default-Bundles */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Default-Bundles"; sourceTree = SOURCE_ROOT; };
 		389C8EC2148B0E530029B942 /* DuxStringLineEnumerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxStringLineEnumerator.h; sourceTree = "<group>"; };
 		389C8EC3148B0E530029B942 /* DuxStringLineEnumerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxStringLineEnumerator.m; sourceTree = "<group>"; };
 		38ACB57017FE2DFE0087C97E /* AboutPanel.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = AboutPanel.xib; sourceTree = "<group>"; };
@@ -870,6 +872,7 @@
 				389ACC4C172265A100E01DB3 /* DuxNavigatorFilesViewController.m */,
 				C97713151724C90B00AC1757 /* DuxNavigatorFileCell.h */,
 				C97713161724C90B00AC1757 /* DuxNavigatorFileCell.m */,
+				389BB90A18FD366B0023F14E /* Default-Bundles */,
 				382F146517EBCA440095BC59 /* Images.xcassets */,
 				38ACB57017FE2DFE0087C97E /* AboutPanel.xib */,
 				38ACB57217FE32F90087C97E /* about-logo.png */,
@@ -1058,6 +1061,7 @@
 				38ACB57317FE32F90087C97E /* about-logo.png in Resources */,
 				38D6059E1403859700D70F81 /* MyTextDocument.xib in Resources */,
 				38D605A11403859700D70F81 /* MainMenu.xib in Resources */,
+				389BB90B18FD366B0023F14E /* Default-Bundles in Resources */,
 				38CFE15E1403CBCD00CA7044 /* docicon.icns in Resources */,
 				38734F521406133200992D33 /* OpenQuickly.xib in Resources */,
 				38983C731474FEC8004DD914 /* JumpToLinePanel.xib in Resources */,
