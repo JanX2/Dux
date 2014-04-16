@@ -247,12 +247,14 @@ CA
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="459"/>
-                                        <menuItem title="Smart Duxpy/Paste" tag="1" keyEquivalent="f" id="350">
+                                        <menuItem title="Smart Duxpy/Paste" tag="1" id="350">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="toggleSmartInsertDelete:" target="-1" id="355"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Smart Quotes" tag="2" keyEquivalent="g" id="351">
+                                        <menuItem title="Smart Quotes" tag="2" id="351">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="toggleAutomaticQuoteSubstitution:" target="-1" id="356"/>
                                             </connections>
@@ -263,8 +265,8 @@ CA
                                                 <action selector="toggleAutomaticDashSubstitution:" target="-1" id="460"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Smart Links" tag="3" keyEquivalent="G" id="354">
-                                            <modifierMask key="keyEquivalentModifierMask" shift="YES" command="YES"/>
+                                        <menuItem title="Smart Links" tag="3" id="354">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="toggleAutomaticLinkDetection:" target="-1" id="357"/>
                                             </connections>
