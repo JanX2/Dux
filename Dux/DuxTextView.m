@@ -1575,19 +1575,26 @@ static CGFloat mainScreenBackingScaleFactor;
     NSRange renderedByteRange = NSMakeRange(NSNotFound, NSNotFound);
     NSRange renderedPixelRange = NSMakeRange(NSNotFound, NSNotFound);
     
-    DuxLine *line = nil;
+    DuxLine *line = [self.storage lineStartingAtByteLocation:self.scrollPosition];
+    
+    CGFloat yFromBottom = self.frame.size.height - yFromTop;
+    while (yFromBottom < (maxYFromBottom - 0.1)) {
+      line = [self.storage lineBeforeLine:line];
+      if (!line)
+        break;
+      
+      yFromTop -= DUX_LINE_HEIGHT;
+      yFromTop = round(yFromTop);
+      yFromBottom = self.frame.size.height - yFromTop;
+      
+      self.scrollPosition = line.range.location;
+      self.scrollDelta = yFromTop;
+    }
+    
     
     BOOL lastLineRendered = NO;
     while (true) {
-      CGFloat yFromBottom = self.frame.size.height - yFromTop;
-      
-      if (!line) {
-        line = [self.storage lineStartingAtByteLocation:self.scrollPosition];
-      } else {
-        line = [self.storage lineAfterLine:line];
-      }
-      if (!line)
-        break;
+      yFromBottom = self.frame.size.height - yFromTop;
       
       if (renderedByteRange.location == NSNotFound || line.range.location < renderedByteRange.location) {
         renderedByteRange.location = line.range.location;
@@ -1608,6 +1615,10 @@ static CGFloat mainScreenBackingScaleFactor;
       
       yFromTop += DUX_LINE_HEIGHT;
       yFromTop = round(yFromTop);
+      
+      line = [self.storage lineAfterLine:line];
+      if (!line)
+        break;
     }
     if (renderedByteRange.location == NSNotFound) {
       NSLog(@"no visible lines!");
