@@ -25,6 +25,10 @@ static CAKeyframeAnimation *insertionPointBlinkAnimation;
 
 @interface DuxTextView()
 
+@property DuxTextLayoutManager *layoutManager;
+
+@property BOOL needsSave;
+
 @property NSDate *dateToResumeInsertionPointBlinking;
 
 @property (readwrite,nonatomic) NSArray *selections;
@@ -60,7 +64,9 @@ static CGFloat mainScreenBackingScaleFactor;
     return nil;
   
   self.storage = [[DuxTextStorage alloc] init];
+  self.layoutManager = [[DuxTextLayoutManager alloc] initWithStorage:self.storage];
   [self initDuxTextView];
+  
   
   return self;
 }
@@ -71,6 +77,7 @@ static CGFloat mainScreenBackingScaleFactor;
     return nil;
   
   self.storage = storage;
+  self.layoutManager = [[DuxTextLayoutManager alloc] initWithStorage:self.storage];
   [self initDuxTextView];
   
   return self;
@@ -1558,93 +1565,37 @@ static CGFloat mainScreenBackingScaleFactor;
     
     lastScrollDate = nil;
     
-    // find all the lines that should be visible TODO: this needs to use the existing set of line layers as a starting point, and only ask the storage for lines that we don't already have
-    CGFloat yFromTop = self.scrollDelta;
-    
-    NSRect visibleRect = self.enclosingScrollView.contentView.documentVisibleRect;
-    CGFloat minYFromBottom = NSMinY(visibleRect) - 5000;
-    minYFromBottom += DUX_LINE_HEIGHT - ((NSUInteger)minYFromBottom % DUX_LINE_HEIGHT); // round to next line increment
-    if (minYFromBottom < 0)
-      minYFromBottom = 0;
-    
-    CGFloat maxYFromBottom = NSMaxY(visibleRect) + DUX_LINE_HEIGHT + 5000;
-    maxYFromBottom += DUX_LINE_HEIGHT - ((NSUInteger)maxYFromBottom % DUX_LINE_HEIGHT); // round to next line increment
-    if (maxYFromBottom > self.frame.size.height)
-      maxYFromBottom = self.frame.size.height;
-    
-    NSRange renderedByteRange = NSMakeRange(NSNotFound, NSNotFound);
-    NSRange renderedPixelRange = NSMakeRange(NSNotFound, NSNotFound);
-    
-    DuxLine *line = [self.storage lineStartingAtByteLocation:self.scrollPosition];
-    
-    CGFloat yFromBottom = self.frame.size.height - yFromTop;
-    while (yFromBottom < (maxYFromBottom - 0.1)) {
-      line = [self.storage lineBeforeLine:line];
-      if (!line)
-        break;
-      
-      yFromTop -= DUX_LINE_HEIGHT;
-      yFromTop = round(yFromTop);
-      yFromBottom = self.frame.size.height - yFromTop;
-      
-      self.scrollPosition = line.range.location;
-      self.scrollDelta = yFromTop;
-    }
-    
-    
-    BOOL lastLineRendered = NO;
-    while (true) {
-      yFromBottom = self.frame.size.height - yFromTop;
-      
-      if (renderedByteRange.location == NSNotFound || line.range.location < renderedByteRange.location) {
-        renderedByteRange.location = line.range.location;
-        renderedPixelRange.location = yFromTop;
-      }
-      if (renderedByteRange.length == NSNotFound || NSMaxRange(line.range) > NSMaxRange(renderedByteRange)) {
-        renderedByteRange.length = NSMaxRange(line.range) - renderedByteRange.location;
-        renderedPixelRange.length = (yFromTop + DUX_LINE_HEIGHT) - renderedPixelRange.location;
-      }
-      
-      if (yFromBottom > minYFromBottom && yFromBottom < maxYFromBottom) {
-        lastLineRendered = YES;
-      } else {
-        if (lastLineRendered) { // run out of visible lines. stop now
-          break;
-        }
-      }
-      
-      yFromTop += DUX_LINE_HEIGHT;
-      yFromTop = round(yFromTop);
-      
-      line = [self.storage lineAfterLine:line];
-      if (!line)
-        break;
-    }
-    if (renderedByteRange.location == NSNotFound) {
-      NSLog(@"no visible lines!");
-      return;
-    }
-    
-    CGFloat bytesToPixelRatio = (CGFloat)renderedPixelRange.length / (CGFloat)renderedByteRange.length; // average number of bytes per vertical pixel
-    CGFloat estimatedHeight = round(self.storage.length * bytesToPixelRatio);
-    estimatedHeight += DUX_LINE_HEIGHT - ((NSUInteger)estimatedHeight % DUX_LINE_HEIGHT); // round to next line increment
-    
-    CGFloat heightDelta = estimatedHeight - self.frame.size.height;
-    if (fabsf(heightDelta) < 0.1)
+    if (self.storage.length == 0)
       return;
     
-    NSRect newFrame = NSMakeRect(self.frame.origin.x, self.frame.origin.y - heightDelta, self.frame.size.width, estimatedHeight);
-    [self setFrame:newFrame withScrollBoundsUpdate:NO];
+    __weak DuxTextView *welf = self;
+    [self.layoutManager documentVisibleRectDidChange:self.enclosingScrollView.contentView.documentVisibleRect scrollDelta:self.scrollDelta scrollByteOffset:self.scrollPosition contentHeight:self.frame.size.height withCallback:^(CGFloat scrollDelta, NSUInteger scrollByteOffset, CGFloat estimatedContentHeight) {
+      self.scrollPosition = scrollByteOffset;
+      self.scrollDelta = scrollDelta;
+      
+      CGFloat heightDelta = estimatedContentHeight - welf.frame.size.height;
+      if (fabsf(heightDelta) < 0.1)
+        return;
+      
+      NSRect newFrame = NSMakeRect(welf.frame.origin.x, welf.frame.origin.y - heightDelta, welf.frame.size.width, estimatedContentHeight);
+      [welf setFrame:newFrame withScrollBoundsUpdate:NO];
+    }];
+    
+    
   });
 }
 
 - (void)updateLayer
 {
+  CGFloat newScrollDelta = self.scrollDelta;
+  CGFloat scrollByteOffset = self.scrollPosition;
   CGFloat lineWidth = self.frame.size.width - leftGutter - rightGutter;
-  CGFloat yFromTop = self.scrollDelta;
-  CGFloat yFromBottom = self.frame.size.height - yFromTop;
-  
+  CGFloat contentHeight= self.frame.size.height;
   NSRect visibleRect = self.enclosingScrollView.contentView.documentVisibleRect;
+  
+  CGFloat yFromTop = newScrollDelta;
+  CGFloat yFromBottom = contentHeight - yFromTop;
+  
   CGFloat minYFromBottom = NSMinY(visibleRect) - 5000;
   minYFromBottom += DUX_LINE_HEIGHT - ((NSUInteger)minYFromBottom % DUX_LINE_HEIGHT); // round to next line increment
   if (minYFromBottom < 0)
@@ -1652,11 +1603,11 @@ static CGFloat mainScreenBackingScaleFactor;
   
   CGFloat maxYFromBottom = NSMaxY(visibleRect) + DUX_LINE_HEIGHT + 5000;
   maxYFromBottom += DUX_LINE_HEIGHT - ((NSUInteger)maxYFromBottom % DUX_LINE_HEIGHT); // round to next line increment
-  if (maxYFromBottom > self.frame.size.height)
-    maxYFromBottom = self.frame.size.height;
+  if (maxYFromBottom > contentHeight)
+    maxYFromBottom = contentHeight;
   
   // first line at scroll position
-  DuxLine *line = [self.storage lineStartingAtByteLocation:self.scrollPosition];
+  DuxLine *line = [self.storage lineStartingAtByteLocation:scrollByteOffset];
   
   // is scroll position too far down?
 //  if ((yFromBottom + DUX_LINE_HEIGHT + 0.1) < maxYFromBottom) {
@@ -1669,8 +1620,8 @@ static CGFloat mainScreenBackingScaleFactor;
   while (line) {
     if (yFromBottom > (minYFromBottom - 0.1) && yFromBottom < (maxYFromBottom + 0.1)) {
       if (!lastLineVisible) {
-        self.scrollDelta = yFromTop;
-        self.scrollPosition = line.range.location;
+        newScrollDelta = yFromTop;
+        scrollByteOffset = line.range.location;
       }
       
       [line setFrameWithTopLeftOrigin:CGPointMake(leftGutter, yFromBottom) width:lineWidth];
@@ -1684,9 +1635,12 @@ static CGFloat mainScreenBackingScaleFactor;
     
     yFromTop += DUX_LINE_HEIGHT;
     yFromTop = round(yFromTop);
-    yFromBottom = self.frame.size.height - yFromTop;
+    yFromBottom = contentHeight - yFromTop;
     line = [self.storage lineAfterLine:line];
   }
+  
+  self.scrollDelta = newScrollDelta;
+  self.scrollPosition = scrollByteOffset;
   
   
 

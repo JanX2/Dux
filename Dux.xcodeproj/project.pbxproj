@@ -27,6 +27,7 @@
 		384FDFE014710EFC00BD0D8D /* DuxHTMLEntityElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 384FDFDF14710EFC00BD0D8D /* DuxHTMLEntityElement.m */; };
 		385115071692FADE0066B876 /* DuxRunBundleQuicklyWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 385115051692FADE0066B876 /* DuxRunBundleQuicklyWindowController.m */; };
 		385115081692FADE0066B876 /* DuxRunBundleQuicklyWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 385115061692FADE0066B876 /* DuxRunBundleQuicklyWindowController.xib */; };
+		3857FF061904E74E0080789C /* DuxTextLayoutManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 3857FF051904E74E0080789C /* DuxTextLayoutManager.m */; };
 		385A1E9C147916760084F48E /* DuxCSSIDSelectorElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 385A1E9B147916760084F48E /* DuxCSSIDSelectorElement.m */; };
 		385A1EA0147917590084F48E /* DuxCSSPseudoSelectorElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 385A1E9F147917590084F48E /* DuxCSSPseudoSelectorElement.m */; };
 		385A1EA3147918770084F48E /* DuxCSSDefinitionBlockElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 385A1EA2147918770084F48E /* DuxCSSDefinitionBlockElement.m */; };
@@ -218,6 +219,8 @@
 		385115041692FADE0066B876 /* DuxRunBundleQuicklyWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxRunBundleQuicklyWindowController.h; sourceTree = "<group>"; };
 		385115051692FADE0066B876 /* DuxRunBundleQuicklyWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxRunBundleQuicklyWindowController.m; sourceTree = "<group>"; };
 		385115061692FADE0066B876 /* DuxRunBundleQuicklyWindowController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DuxRunBundleQuicklyWindowController.xib; sourceTree = "<group>"; };
+		3857FF041904E74E0080789C /* DuxTextLayoutManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxTextLayoutManager.h; sourceTree = "<group>"; };
+		3857FF051904E74E0080789C /* DuxTextLayoutManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxTextLayoutManager.m; sourceTree = "<group>"; };
 		385A1E9A147916760084F48E /* DuxCSSIDSelectorElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxCSSIDSelectorElement.h; sourceTree = "<group>"; };
 		385A1E9B147916760084F48E /* DuxCSSIDSelectorElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = DuxCSSIDSelectorElement.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		385A1E9E147917590084F48E /* DuxCSSPseudoSelectorElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxCSSPseudoSelectorElement.h; sourceTree = "<group>"; };
@@ -483,6 +486,8 @@
 			children = (
 				380AED3B14500377005770D7 /* DuxTextView.h */,
 				380AED3C14500377005770D7 /* DuxTextView.m */,
+				3857FF041904E74E0080789C /* DuxTextLayoutManager.h */,
+				3857FF051904E74E0080789C /* DuxTextLayoutManager.m */,
 				385FB51C174C677F008E5AE0 /* DuxTextViewSelection.h */,
 				385FB51D174C677F008E5AE0 /* DuxTextViewSelection.m */,
 				3869817317292BE2004D0C4B /* DuxLine.h */,
@@ -1170,6 +1175,7 @@
 				38B5BB0E171E5526000C8525 /* NSColor+DuxColors.m in Sources */,
 				38D4B49117209FA300B2EDEC /* DuxAcknowledgementsController.m in Sources */,
 				389ACC4D172265A100E01DB3 /* DuxNavigatorFilesViewController.m in Sources */,
+				3857FF061904E74E0080789C /* DuxTextLayoutManager.m in Sources */,
 				C97713171724C90B00AC1757 /* DuxNavigatorFileCell.m in Sources */,
 				3869817717292BE2004D0C4B /* DuxLine.m in Sources */,
 				3869817817292BE2004D0C4B /* DuxTextStorage.m in Sources */,

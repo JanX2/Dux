@@ -11,6 +11,7 @@
 #import <AppKit/AppKit.h>
 #import "NSStringDuxAdditions.h"
 #import "DuxTextStorage.h"
+#import "DuxTextLayoutManager.h"
 
 @class MyTextDocument;
 
