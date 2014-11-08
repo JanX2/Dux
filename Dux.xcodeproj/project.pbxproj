@@ -41,7 +41,6 @@
 		385A1EA6147919A80084F48E /* DuxCSSPropertyNameElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 385A1EA5147919A80084F48E /* DuxCSSPropertyNameElement.m */; };
 		386ADEF7168DA6F800C961DA /* DuxProjectWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 386ADEF6168DA6F800C961DA /* DuxProjectWindow.m */; };
 		386ADEFB168E316D00C961DA /* DuxDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = 386ADEFA168E316D00C961DA /* DuxDocumentController.m */; };
-		386EC88A172A22B9000C7430 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 386EC889172A22B9000C7430 /* SenTestingKit.framework */; };
 		386EC88B172A22B9000C7430 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 38D605871403859600D70F81 /* Cocoa.framework */; };
 		386EC891172A22B9000C7430 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 386EC88F172A22B9000C7430 /* InfoPlist.strings */; };
 		386EC894172A22B9000C7430 /* DuxSyntaxHighlighterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 386EC893172A22B9000C7430 /* DuxSyntaxHighlighterTests.m */; };
@@ -172,6 +171,7 @@
 		38F1060916490F8A00467839 /* DuxMultiFileSearchWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 38F1060716490F8A00467839 /* DuxMultiFileSearchWindowController.m */; };
 		38F1060A16490F8A00467839 /* DuxMultiFileSearchWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 38F1060816490F8A00467839 /* DuxMultiFileSearchWindowController.xib */; };
 		38FBDAD815DF895300B9FE70 /* DuxFileContentsWatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 38FBDAD715DF895300B9FE70 /* DuxFileContentsWatcher.m */; };
+		3D4BA1541A0E31FE00C04DC6 /* DuxTheme.m in Sources */ = {isa = PBXBuildFile; fileRef = 376F9C78180B5718007DED82 /* DuxTheme.m */; };
 		6C2EEB5F172A4C2500B9E411 /* DuxJSONBaseElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 6C2EEB54172A4C2500B9E411 /* DuxJSONBaseElement.m */; };
 		6C2EEB60172A4C2500B9E411 /* DuxJSONKeyElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 6C2EEB56172A4C2500B9E411 /* DuxJSONKeyElement.m */; };
 		6C2EEB61172A4C2500B9E411 /* DuxJSONKeywordElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 6C2EEB58172A4C2500B9E411 /* DuxJSONKeywordElement.m */; };
@@ -183,6 +183,16 @@
 		C9F4E9441725543100E7AEC8 /* PaneGradientBar.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F4E9421725543100E7AEC8 /* PaneGradientBar.png */; };
 		C9F4E9451725543100E7AEC8 /* PaneGradientBar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F4E9431725543100E7AEC8 /* PaneGradientBar@2x.png */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3D4BA1521A0E2FF500C04DC6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 38D6057A1403859600D70F81 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 38D605821403859600D70F81;
+			remoteInfo = Dux;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		38E063871820E8E0004D966B /* CopyFiles */ = {
@@ -263,8 +273,7 @@
 		386ADEF6168DA6F800C961DA /* DuxProjectWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxProjectWindow.m; sourceTree = "<group>"; };
 		386ADEF9168E316D00C961DA /* DuxDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DuxDocumentController.h; sourceTree = "<group>"; };
 		386ADEFA168E316D00C961DA /* DuxDocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DuxDocumentController.m; sourceTree = "<group>"; };
-		386EC888172A22B9000C7430 /* DuxSyntaxHighlighterTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DuxSyntaxHighlighterTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
-		386EC889172A22B9000C7430 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
+		386EC888172A22B9000C7430 /* DuxSyntaxHighlighterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DuxSyntaxHighlighterTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		386EC88E172A22B9000C7430 /* DuxSyntaxHighlighterTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "DuxSyntaxHighlighterTests-Info.plist"; sourceTree = "<group>"; };
 		386EC890172A22B9000C7430 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		386EC892172A22B9000C7430 /* DuxSyntaxHighlighterTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DuxSyntaxHighlighterTests.h; sourceTree = "<group>"; };
@@ -467,7 +476,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				386EC88A172A22B9000C7430 /* SenTestingKit.framework in Frameworks */,
 				386EC88B172A22B9000C7430 /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -802,7 +810,7 @@
 			isa = PBXGroup;
 			children = (
 				38D605831403859600D70F81 /* Dux.app */,
-				386EC888172A22B9000C7430 /* DuxSyntaxHighlighterTests.octest */,
+				386EC888172A22B9000C7430 /* DuxSyntaxHighlighterTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -817,7 +825,6 @@
 				38E063891820EB0E004D966B /* JavaScriptCore.framework */,
 				3754085318187175006B27C8 /* CoreServices.framework */,
 				38D605871403859600D70F81 /* Cocoa.framework */,
-				386EC889172A22B9000C7430 /* SenTestingKit.framework */,
 				38D605891403859600D70F81 /* Other Frameworks */,
 			);
 			name = Frameworks;
@@ -982,11 +989,12 @@
 			buildRules = (
 			);
 			dependencies = (
+				3D4BA1531A0E2FF500C04DC6 /* PBXTargetDependency */,
 			);
 			name = DuxSyntaxHighlighterTests;
 			productName = DuxSyntaxHighlighterTests;
-			productReference = 386EC888172A22B9000C7430 /* DuxSyntaxHighlighterTests.octest */;
-			productType = "com.apple.product-type.bundle.ocunit-test";
+			productReference = 386EC888172A22B9000C7430 /* DuxSyntaxHighlighterTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		38D605821403859600D70F81 /* Dux */ = {
 			isa = PBXNativeTarget;
@@ -1015,6 +1023,9 @@
 				LastTestingUpgradeCheck = 0610;
 				LastUpgradeCheck = 0610;
 				TargetAttributes = {
+					386EC887172A22B9000C7430 = {
+						DevelopmentTeam = FK9S39L3SK;
+					};
 					38D605821403859600D70F81 = {
 						DevelopmentTeam = Y48LQG59RS;
 						SystemCapabilities = {
@@ -1136,6 +1147,7 @@
 				389B0177172B2418003ADE63 /* DuxCSSNumberValueElement.m in Sources */,
 				389B0178172B2418003ADE63 /* DuxCSSColorValueElement.m in Sources */,
 				389B017C172B2513003ADE63 /* DuxCSSAtRuleElement.m in Sources */,
+				3D4BA1541A0E31FE00C04DC6 /* DuxTheme.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1258,6 +1270,14 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		3D4BA1531A0E2FF500C04DC6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 38D605821403859600D70F81 /* Dux */;
+			targetProxy = 3D4BA1521A0E2FF500C04DC6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXVariantGroup section */
 		386EC88F172A22B9000C7430 /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
@@ -1310,13 +1330,15 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				FRAMEWORK_SEARCH_PATHS = "\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"",
+					"$(inherited)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "DuxSyntaxHighlighterTests/DuxSyntaxHighlighterTests-Prefix.pch";
 				INFOPLIST_FILE = "DuxSyntaxHighlighterTests/DuxSyntaxHighlighterTests-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = octest;
 			};
 			name = Debug;
 		};
@@ -1328,13 +1350,15 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				FRAMEWORK_SEARCH_PATHS = "\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"",
+					"$(inherited)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "DuxSyntaxHighlighterTests/DuxSyntaxHighlighterTests-Prefix.pch";
 				INFOPLIST_FILE = "DuxSyntaxHighlighterTests/DuxSyntaxHighlighterTests-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = octest;
 			};
 			name = Release;
 		};
