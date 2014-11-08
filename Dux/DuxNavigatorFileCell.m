@@ -15,7 +15,6 @@
 #define kTextFrameYOffset       2
 
 @interface DuxNavigatorFileCell ()
-@property (readwrite, strong) NSImage *image;
 @end
 
 @implementation DuxNavigatorFileCell

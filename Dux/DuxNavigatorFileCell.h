@@ -9,4 +9,7 @@
 #import <Cocoa/Cocoa.h>
 
 @interface DuxNavigatorFileCell : NSTextFieldCell
+
+@property (readwrite, strong) NSImage *image;
+
 @end
