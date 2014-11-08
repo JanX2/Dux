@@ -190,11 +190,11 @@ void fs_event_cb(ConstFSEventStreamRef stream,
   
   if ([self outlineView:olv isItemExpandable:item])
   {
-    [(DuxNavigatorFileCell *)cell setImage:folderImage];
+    ((DuxNavigatorFileCell *)cell).image = folderImage;
   }
   else {
     NSString *fileExtension = [(NSURL *)item pathExtension];
-    [(DuxNavigatorFileCell *)cell setImage:[[NSWorkspace sharedWorkspace] iconForFileType:fileExtension]];
+    ((DuxNavigatorFileCell *)cell).image = [[NSWorkspace sharedWorkspace] iconForFileType:fileExtension];
   }
 }
 
