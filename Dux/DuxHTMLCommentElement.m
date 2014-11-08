@@ -35,7 +35,7 @@ static NSColor *entityColor;
   // scan up to the next character
   NSUInteger stringLength = string.length;
   NSUInteger searchPosition = startingAt;
-  NSRange foundRange;
+  NSRange foundRange = NSMakeRange(startingAt, stringLength-startingAt);
   while (searchPosition < stringLength) {
     foundRange = [string.string rangeOfCharacterFromSet:nextElementCharacterSet options:NSLiteralSearch range:NSMakeRange(searchPosition, string.string.length - searchPosition)];
     

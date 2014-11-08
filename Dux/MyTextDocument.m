@@ -157,7 +157,9 @@
   NSStringEncoding encoding;
   NSString *textContentToLoad = [NSString stringWithUnknownData:data usedEncoding:&encoding];
   if (!textContentToLoad) {
-    *outError = [NSError errorWithDomain:NSCocoaErrorDomain code:NSFileReadUnknownError userInfo:nil];
+    if (outError != NULL) {
+      *outError = [NSError errorWithDomain:NSCocoaErrorDomain code:NSFileReadUnknownError userInfo:nil];
+    }
     return NO;
   }
   self.stringEncoding = encoding;
