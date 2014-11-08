@@ -170,11 +170,11 @@ void fs_event_cb(ConstFSEventStreamRef stream,
 
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item
 {
-  // string? eg loading status
-  if ([item isKindOfClass:[NSString class]])
+  // Not a URL? Maybe a string? eg loading status -> return directly.
+  if (![item isKindOfClass:[NSURL class]])
     return item;
   
-  // assume it's a url
+  // it's a url
   NSURL *url = item;
   
   // return it
