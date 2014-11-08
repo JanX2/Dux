@@ -72,7 +72,7 @@
 		3886D4B81479100000970CAE /* DuxCSSCommentElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 3886D4B71479100000970CAE /* DuxCSSCommentElement.m */; };
 		3886D4C3147912BC00970CAE /* DuxCSSClassSelectorElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 3886D4C2147912BC00970CAE /* DuxCSSClassSelectorElement.m */; };
 		388A4E38182673E600A9FD17 /* CocoaScript.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 388A4E37182673E600A9FD17 /* CocoaScript.framework */; };
-		388A4E391826742A00A9FD17 /* CocoaScript.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 388A4E37182673E600A9FD17 /* CocoaScript.framework */; };
+		388A4E391826742A00A9FD17 /* CocoaScript.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 388A4E37182673E600A9FD17 /* CocoaScript.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		38983C731474FEC8004DD914 /* JumpToLinePanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 38983C721474FEC8004DD914 /* JumpToLinePanel.xib */; };
 		38983C7614751B66004DD914 /* DuxLanguageMenuItem.m in Sources */ = {isa = PBXBuildFile; fileRef = 38983C7514751B65004DD914 /* DuxLanguageMenuItem.m */; };
 		389ACC4D172265A100E01DB3 /* DuxNavigatorFilesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 389ACC4C172265A100E01DB3 /* DuxNavigatorFilesViewController.m */; };
@@ -986,7 +986,7 @@
 			name = DuxSyntaxHighlighterTests;
 			productName = DuxSyntaxHighlighterTests;
 			productReference = 386EC888172A22B9000C7430 /* DuxSyntaxHighlighterTests.octest */;
-			productType = "com.apple.product-type.bundle";
+			productType = "com.apple.product-type.bundle.ocunit-test";
 		};
 		38D605821403859600D70F81 /* Dux */ = {
 			isa = PBXNativeTarget;
@@ -1012,7 +1012,8 @@
 		38D6057A1403859600D70F81 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0500;
+				LastTestingUpgradeCheck = 0610;
+				LastUpgradeCheck = 0610;
 				TargetAttributes = {
 					38D605821403859600D70F81 = {
 						DevelopmentTeam = Y48LQG59RS;
@@ -1346,9 +1347,11 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -1382,10 +1385,12 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
