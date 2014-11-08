@@ -552,7 +552,7 @@ static NSCharacterSet *newlineCharacterSet;
     return nil;
   
   // find the start of the word
-  NSMutableCharacterSet *mutableCharset = [NSCharacterSet alphanumericCharacterSet];
+  NSMutableCharacterSet *mutableCharset = [[NSCharacterSet alphanumericCharacterSet] mutableCopy];
   [mutableCharset addCharactersInString:@"_"];
   NSCharacterSet *wordBoundaryCharset = mutableCharset.invertedSet;
   
@@ -582,7 +582,7 @@ static NSCharacterSet *newlineCharacterSet;
     return;
   
   // find the start of the word
-  NSMutableCharacterSet *mutableCharset = [NSCharacterSet alphanumericCharacterSet];
+  NSMutableCharacterSet *mutableCharset = [[NSCharacterSet alphanumericCharacterSet] mutableCopy];
   [mutableCharset addCharactersInString:@"_"];
   NSCharacterSet *wordBoundaryCharset = mutableCharset.invertedSet;
   
