@@ -15,7 +15,7 @@
 #import "DuxTheme.h"
 #import "DuxPreferences.h"
 
-#define COLUMNID_NAME			@"NameColumn" // Name for the file cell
+NSString * const kFileColumnName = @"FileColumn"; // Name for the file column
 #define kIconImageSize  16.0
 #define kRefreshDelay 0.6
 
@@ -34,6 +34,8 @@ void fs_event_cb(ConstFSEventStreamRef stream,
   NSImage						*folderImage;
   FSEventStreamRef fsStream;
 }
+
+@property NSTableColumn *fileTableColumn;
 
 @property NSMutableSet *cachedUrls;
 @property NSMutableSet *cacheQueuedUrls;
@@ -102,7 +104,9 @@ void fs_event_cb(ConstFSEventStreamRef stream,
 
 - (void)initOutlineCells
 {
-  NSTableColumn *tableColumn = [self.filesView tableColumnWithIdentifier:COLUMNID_NAME];
+  NSTableColumn *tableColumn = [self.filesView tableColumnWithIdentifier:kFileColumnName];
+  self.fileTableColumn = tableColumn;
+
   DuxNavigatorFileCell *imageAndTextCell = [[DuxNavigatorFileCell alloc] init];
   [imageAndTextCell setEditable:YES];
   [tableColumn setDataCell:imageAndTextCell];
@@ -185,6 +189,10 @@ void fs_event_cb(ConstFSEventStreamRef stream,
 
 - (void)outlineView:(NSOutlineView *)olv willDisplayCell:(NSCell*)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item
 {
+  if (tableColumn != _fileTableColumn) {
+    return;
+  }
+  
   NSTextFieldCell *textCell = [tableColumn dataCell];
   textCell.textColor = [[DuxTheme currentTheme] foreground];
   
